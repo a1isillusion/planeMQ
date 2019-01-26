@@ -1,5 +1,6 @@
 package store;
 
+import java.io.File;
 import java.util.HashMap;
 
 public class CommitLog {
@@ -7,7 +8,11 @@ public MappedFileQueue mappedFileQueue;
 public AppendMessageCallback cb;
 public HashMap<String, Long>topicQueueTable;
 public CommitLog() {
-	mappedFileQueue=new MappedFileQueue("G://planeMQ//store", 1024);
+	File storeDir=new File("G://planeMQ//Store");
+	if(!storeDir.exists()) {
+		storeDir.mkdirs();
+	}
+	mappedFileQueue=new MappedFileQueue(storeDir.getAbsolutePath(), 1024);
 	cb=new AppendMessageCallback();
 	topicQueueTable=new HashMap<String, Long>();
 }

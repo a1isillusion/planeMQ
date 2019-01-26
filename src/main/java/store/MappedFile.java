@@ -72,4 +72,17 @@ public MessageExtBrokerInner getMessage(int offset,int size) {
 	}
 	return msg;
 }
+public ByteBuffer selectMappedBuffer(int offset) {
+	ByteBuffer result=null;
+	if(offset+ConsumeQueue.CQ_STORE_UNIT_SIZE<=wrotePosition) {
+		ByteBuffer byteBuffer=buffer.slice();
+		byteBuffer.position(wrotePosition);
+		byteBuffer.flip();
+		byteBuffer.position(offset);
+		byte[] bs=new byte[ConsumeQueue.CQ_STORE_UNIT_SIZE];
+		byteBuffer.get(bs);
+		result=ByteBuffer.wrap(bs);
+	}
+	return result;
+}
 }

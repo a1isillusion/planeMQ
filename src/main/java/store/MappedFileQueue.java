@@ -2,6 +2,7 @@ package store;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -93,6 +94,14 @@ public MessageExtBrokerInner getMessage(long offset,int size) {
 		msg=mappedFile.getMessage((int) (offset%mappedFileSize), size);
 	}
 	return msg;
+}
+public ByteBuffer selectMappedBuffer(long offset) {
+	ByteBuffer result=null;
+	MappedFile mappedFile=findMappedFileByOffset(offset);
+	if(mappedFile!=null) {
+		result=mappedFile.selectMappedBuffer((int) (offset%mappedFileSize));
+	}
+	return result;
 }
 public void reput() {//待完善
 	File dir=new File(storePath);
