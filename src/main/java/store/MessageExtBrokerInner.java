@@ -1,9 +1,10 @@
 package store;
 
+import java.util.Arrays;
 
 public class MessageExtBrokerInner {
 public String topic;
-public int QueueId;
+public int queueId;
 public byte[] body;
 public long bornTimeStamp;
 public String bornHost;
@@ -15,10 +16,10 @@ public void setTopic(String topic) {
 	this.topic = topic;
 }
 public int getQueueId() {
-	return QueueId;
+	return queueId;
 }
 public void setQueueId(int queueId) {
-	QueueId = queueId;
+	this.queueId = queueId;
 }
 public byte[] getBody() {
 	return body;
@@ -44,5 +45,9 @@ public String getStoreHost() {
 public void setStoreHost(String storeHost) {
 	this.storeHost = storeHost;
 }
-
+@Override
+public String toString() {
+	return "MessageExtBrokerInner [topic=" + topic + ", QueueId=" + queueId + ", body=" + Arrays.toString(body)
+			+ ", bornTimeStamp=" + bornTimeStamp + ", bornHost=" + bornHost + ", storeHost=" + storeHost + "]";
+}
 }
