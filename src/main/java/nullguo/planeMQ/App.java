@@ -10,6 +10,7 @@ import java.nio.channels.FileChannel;
 
 import store.AppendMessageCallback;
 import store.CommitLog;
+import store.ConsumeQueue;
 import store.MappedFile;
 import store.MessageExtBrokerInner;
 
@@ -36,5 +37,12 @@ public class App
        }       
         MessageExtBrokerInner messageExtBrokerInner=log.getMessage(10032, 102);
         System.out.println(messageExtBrokerInner);
+        ConsumeQueue queue=new ConsumeQueue("topic", 110);
+        System.out.println(queue.putMessagePositionInfo(254, 85, 58));
+        MappedFile file=queue.mappedFileQueue.getFirstMappedFile();
+        MappedByteBuffer buffer=file.buffer;
+        buffer.flip();
+        buffer.limit(20);
+        System.out.println(buffer.getLong());
     }
 }

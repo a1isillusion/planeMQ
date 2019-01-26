@@ -1,6 +1,9 @@
 package store;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MappedFileQueue {
@@ -74,6 +77,15 @@ public AppendMessageResult putMessage(MessageExtBrokerInner msg,AppendMessageCal
 	}
 	return result;
 }
+public boolean putMessage(byte[] msg) {
+	MappedFile mappedFile=getLastMappedFile(true);
+	boolean result=mappedFile.appendMessage(msg);
+	if(result==false) {
+		mappedFile=createNewMappedFile();
+		result=mappedFile.appendMessage(msg);
+	}
+	return result;
+}
 public MessageExtBrokerInner getMessage(long offset,int size) {
 	MessageExtBrokerInner msg=null;
 	MappedFile mappedFile=findMappedFileByOffset(offset);
@@ -81,5 +93,23 @@ public MessageExtBrokerInner getMessage(long offset,int size) {
 		msg=mappedFile.getMessage((int) (offset%mappedFileSize), size);
 	}
 	return msg;
+}
+public void reput() {//待完善
+	File dir=new File(storePath);
+	if(dir.isDirectory()) {
+		mappedFiles.clear();
+		ArrayList<Long> fileNameList=new ArrayList<Long>();
+		for(File file:dir.listFiles()) {
+			fileNameList.add(Long.parseLong(file.getName()));
+		}
+		Collections.sort(fileNameList);
+		for(Long name:fileNameList) {
+			try {
+				this.mappedFiles.add(new MappedFile(storePath, name, mappedFileSize));
+			}catch (IOException e) {
+				System.out.println("创建MappedFile失败！");
+			}
+		}
+	}
 }
 }

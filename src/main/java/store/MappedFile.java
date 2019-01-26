@@ -47,6 +47,18 @@ public AppendMessageResult appendMessage(MessageExtBrokerInner msg,AppendMessage
 	}
 	return result;
 }
+public boolean appendMessage(byte[] msg) {
+	boolean result=false;
+	if(wrotePosition<fileSize&&fileSize-wrotePosition>=msg.length) {
+		ByteBuffer byteBuffer=buffer.slice();
+		byteBuffer.position(wrotePosition);
+		byteBuffer.put(msg);
+		wrotePosition=byteBuffer.position();
+		System.out.println("position:"+wrotePosition);
+		result=true;
+	}
+	return result;
+}
 public MessageExtBrokerInner getMessage(int offset,int size) {
 	MessageExtBrokerInner msg=null;
 	if(offset+size<=wrotePosition) {
