@@ -3,6 +3,7 @@ package store;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -11,6 +12,7 @@ public FileChannel fileChannel;
 public MappedByteBuffer buffer;
 public String path;
 public String name;
+public File file;
 public int fileSize;
 public int wrotePosition=0;
 public int committedPosition=0;
@@ -21,8 +23,8 @@ public MappedFile(String storePath,int offset,int mappedFileSize) throws IOExcep
 	path=storePath;
 	fileFromOffset=offset;
 	fileSize=mappedFileSize;
-	name="0000000"+fileFromOffset;
-	File file=new File(path, name);
+	name=""+fileFromOffset;
+	file=new File(path, name);
 	if(!file.exists()) {
 		file.createNewFile();
 	}
@@ -30,5 +32,18 @@ public MappedFile(String storePath,int offset,int mappedFileSize) throws IOExcep
 	raFile.setLength(fileSize);
 	fileChannel=raFile.getChannel();
 	buffer=fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileChannel.size());
+}
+public boolean appendMessage(MessageExtBrokerInner msg,AppendMessageCallback cb) {
+	boolean result=false;
+	if(wrotePosition<fileSize) {
+		ByteBuffer byteBuffer=buffer.slice();
+		byteBuffer.position(wrotePosition);
+		int offset=cb.doAppend(fileFromOffset, byteBuffer, fileSize-wrotePosition, msg);
+		if(offset!=0) {
+			wrotePosition=offset;
+			result=true;
+		}
+	}
+	return result;
 }
 }
