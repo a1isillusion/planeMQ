@@ -3,7 +3,6 @@ package remoting;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -13,7 +12,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import common.Pair;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
@@ -41,12 +39,9 @@ public EventLoopGroup eventLoopGroupWorker;
 public Bootstrap bootstrap=new Bootstrap();
 public ConcurrentHashMap<String, Channel> channelTables=new ConcurrentHashMap<String, Channel>();
 public Timer timer = new Timer("ClientHouseKeepingService", true);
-public ExecutorService publicExecutor;
 public ExecutorService callbackExecutor;
-public DefaultChannelEventListener channelEventListener;
+public ChannelEventListrener channelEventListener;
 public DefaultEventExecutorGroup defaultEventExecutorGroup;
-public HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>> processorTables=new HashMap<Integer, Pair<NettyRequestProcessor,ExecutorService>>();
-public Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessor;
 public List<RPCHook> rpcHooks=new ArrayList<RPCHook>();
 public NettyRemotingClient() {
 	this.channelEventListener=new DefaultChannelEventListener();
@@ -56,10 +51,10 @@ public NettyRemotingClient() {
             return new Thread(r, String.format("NettyClientSelector_%d", this.threadIndex.incrementAndGet()));
         }
     });
-    this.publicExecutor = Executors.newFixedThreadPool(4, new ThreadFactory() {
+    this.callbackExecutor = Executors.newFixedThreadPool(1, new ThreadFactory() {
         private AtomicInteger threadIndex = new AtomicInteger(0);
         public Thread newThread(Runnable r) {
-            return new Thread(r, "NettyClientPublicExecutor_" + this.threadIndex.incrementAndGet());
+            return new Thread(r, "NettyClientCallbackExecutor_" + this.threadIndex.incrementAndGet());
         }
     });
     this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(4, new ThreadFactory() {
@@ -103,12 +98,11 @@ public void shutdown() {
     } catch (Exception e) {
         System.out.println("NettyRemotingClient shutdown exception");
     }
-
-    if (this.publicExecutor != null) {
+    if (this.callbackExecutor != null) {
         try {
-            this.publicExecutor.shutdown();
+            this.callbackExecutor.shutdown();
         } catch (Exception e) {
-            System.out.println("NettyRemotingServer shutdown exception");
+            System.out.println("NettyRemotingClient shutdown exception");
         }
     }
 }
@@ -143,6 +137,21 @@ public void registerRPCHook(RPCHook rpcHook) {
 		rpcHooks.add(rpcHook);
 	}
 }
+public void doBeforeRpcHooks(String addr, RemotingCommand request) {
+    if (rpcHooks.size() > 0) {
+        for (RPCHook rpcHook: rpcHooks) {
+            rpcHook.doBeforeRequest(addr, request);
+        }
+    }
+}
+
+public void doAfterRpcHooks(String addr, RemotingCommand request, RemotingCommand response) {
+    if (rpcHooks.size() > 0) {
+        for (RPCHook rpcHook: rpcHooks) {
+            rpcHook.doAfterResponse(addr, request, response);
+        }
+    }
+}
 public void updateNameServerAddressList(List<String> addrs) {
     List<String> old = this.namesrvAddrList;
     boolean update = false;
@@ -175,8 +184,23 @@ public Channel createChannel(String addr) throws Exception{
 	this.channelTables.put(addr, channel);
 	return channel;
 }
-public void processResponseCommand(ChannelHandlerContext ctx,RemotingCommand cmd) {
-	System.out.println("processResponse:"+cmd);
+public void processResponseCommand(final ChannelHandlerContext ctx,final RemotingCommand cmd) {
+	ExecutorService executor=this.callbackExecutor;
+	if(executor!=null) {
+        try {
+            executor.submit(new Runnable() {
+                public void run() {
+                    try {
+                        System.out.println(ctx.channel().remoteAddress()+" response:"+cmd);
+                    } catch (Throwable e) {
+                        System.out.println("execute callback in executor exception, and callback throw");
+                    } 
+                }
+            });
+        } catch (Exception e) {
+            System.out.println("execute callback in executor exception, maybe executor busy");
+        }
+	}
 }
 public void invokeOneway(final Channel channel, final RemotingCommand request) throws Exception {
      try {

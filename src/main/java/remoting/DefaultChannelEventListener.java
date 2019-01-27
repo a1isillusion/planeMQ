@@ -2,20 +2,26 @@ package remoting;
 
 import io.netty.channel.Channel;
 
-public class DefaultChannelEventListener {
-public void onChannelConnect(final String remoteAddr,Channel channel) {
-	
-}
+public class DefaultChannelEventListener implements ChannelEventListrener {
 
-public void onChannelClose(final String remoteAddr, final Channel channel) {
-	
-}
+	public void onChannelConnect(String remoteAddr, Channel channel) {
+		// TODO Auto-generated method stub
+		
+	}
 
-public void onChannelException(final String remoteAddr, final Channel channel) {
-	
-}
+	public void onChannelClose(String remoteAddr, Channel channel) {
+		// TODO Auto-generated method stub
+		
+	}
 
-public void onChannelIdle(final String remoteAddr, final Channel channel) {
-	
-}
+	public void onChannelException(String remoteAddr, Channel channel) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void onChannelIdle(String remoteAddr, Channel channel) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

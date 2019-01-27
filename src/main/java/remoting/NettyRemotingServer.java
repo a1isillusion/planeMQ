@@ -1,11 +1,14 @@
 package remoting;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import common.Pair;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -26,12 +29,15 @@ public ServerBootstrap serverBootstrap=new ServerBootstrap();
 public EventLoopGroup eventLoopGroupSelector;
 public EventLoopGroup eventLoopGroupBoss;
 public ExecutorService publicExecutor;
-public DefaultChannelEventListener channelEventListener;
+public ChannelEventListrener channelEventListener;
 public Timer timer=new Timer("ServerHouseKeepingService", true);
 public DefaultEventExecutorGroup defaultEventExecutorGroup;
+public HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>> processorTable=new HashMap<Integer, Pair<NettyRequestProcessor,ExecutorService>>();
+public Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessor;
 public int port=0;
 public NettyRemotingServer(int port) {
 	this.port=port;
+	this.channelEventListener=new DefaultChannelEventListener();
     this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(4, new ThreadFactory() {
         private AtomicInteger threadIndex = new AtomicInteger(0);
         public Thread newThread(Runnable r) {
@@ -50,6 +56,12 @@ public NettyRemotingServer(int port) {
         private int threadTotal = 1;
         public Thread newThread(Runnable r) {
             return new Thread(r, String.format("NettyServerNIOSelector_%d_%d", threadTotal, this.threadIndex.incrementAndGet()));
+        }
+    });
+    this.publicExecutor = Executors.newFixedThreadPool(1, new ThreadFactory() {
+        private AtomicInteger threadIndex = new AtomicInteger(0);
+        public Thread newThread(Runnable r) {
+            return new Thread(r, "NettyServerPublicExecutor_" + this.threadIndex.incrementAndGet());
         }
     });
 	this.serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupSelector)
@@ -80,8 +92,54 @@ public NettyRemotingServer(int port) {
         throw new RuntimeException("this.serverBootstrap.bind().sync() InterruptedException", e);
     }
 }
-public void processRequestCommend(ChannelHandlerContext ctx,RemotingCommand cmd) {
+public void registerProcessor(int requestCode, NettyRequestProcessor processor, ExecutorService executor) {
+    ExecutorService executorThis = executor;
+    if (null == executor) {
+        executorThis = this.publicExecutor;
+    }
+
+    Pair<NettyRequestProcessor, ExecutorService> pair = new Pair<NettyRequestProcessor, ExecutorService>(processor, executorThis);
+    this.processorTable.put(requestCode, pair);
+}
+public void registerDefaultProcessor(NettyRequestProcessor processor, ExecutorService executor) {
+    this.defaultRequestProcessor = new Pair<NettyRequestProcessor, ExecutorService>(processor, executor);
+}
+public void processRequestCommend(final ChannelHandlerContext ctx,final RemotingCommand cmd) {
 	System.out.println("processRequest:"+cmd);
+    final Pair<NettyRequestProcessor, ExecutorService> matched = this.processorTable.get(cmd.getCode());
+    final Pair<NettyRequestProcessor, ExecutorService> pair = null == matched ? this.defaultRequestProcessor : matched;
+    if(pair!=null) {
+    	Runnable run=new Runnable() {		
+			public void run() {
+				try {
+					RemotingCommand response=pair.getObject1().processRequest(ctx, cmd);
+					if(cmd.getRPC_ONEWAY()==0) {
+						if(response!=null) {
+							response.setOpaque(cmd.getOpaque());
+							response.setRPC_TYPE(1);
+							ctx.writeAndFlush(response);
+						}
+					}
+				} catch (Exception e) {
+					System.out.println("process request over, but response failed");
+				}
+				
+			}
+		};
+		if(pair.getObject1().rejectRequest()) {
+			RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_BUSY,
+                    "[REJECTREQUEST]system busy, start flow control for a while");
+			response.setOpaque(cmd.getOpaque());
+			ctx.writeAndFlush(response);
+			return;
+		}
+		pair.getObject2().execute(run);
+    }else {
+    	String error = " request type " + cmd.getCode() + " not supported";
+        final RemotingCommand response =new RemotingCommand(CommandCode.REQUEST_CODE_NOT_SUPPORTED, error);
+        response.setOpaque(cmd.opaque);
+        ctx.writeAndFlush(response);
+	}
 }
 class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 
