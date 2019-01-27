@@ -23,6 +23,7 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import util.RemotingUtil;
 
 public class NettyRemotingServer {
 public ServerBootstrap serverBootstrap=new ServerBootstrap();
@@ -151,37 +152,37 @@ class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 class NettyConnectManageHandler extends ChannelDuplexHandler {
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        final String remoteAddress =ctx.channel().remoteAddress().toString();
-        System.out.println("NETTY SERVER PIPELINE: channelRegistered "+remoteAddress);
+        final String remoteAddress =RemotingUtil.parseChannelRemoteAddr(ctx.channel());
+        System.out.println("NETTY SERVER PIPELINE: channelRegistered, the channel["+remoteAddress+"]");
         super.channelRegistered(ctx);
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        final String remoteAddress = ctx.channel().remoteAddress().toString();
+        final String remoteAddress = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
         System.out.println("NETTY SERVER PIPELINE: channelUnregistered, the channel["+remoteAddress+"]");
         super.channelUnregistered(ctx);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        final String remoteAddress = ctx.channel().remoteAddress().toString();
+        final String remoteAddress = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
         System.out.println("NETTY SERVER PIPELINE: channelActive, the channel["+remoteAddress+"]");
         super.channelActive(ctx);
 
         if (NettyRemotingServer.this.channelEventListener != null) {
-            NettyRemotingServer.this.channelEventListener.onChannelConnect(remoteAddress.toString(), ctx.channel());
+            NettyRemotingServer.this.channelEventListener.onChannelConnect(remoteAddress, ctx.channel());
         }
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        final String remoteAddress = ctx.channel().remoteAddress().toString();
+        final String remoteAddress = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
         System.out.println("NETTY SERVER PIPELINE: channelInactive, the channel["+remoteAddress+"]");
         super.channelInactive(ctx);
 
         if (NettyRemotingServer.this.channelEventListener != null) {
-            NettyRemotingServer.this.channelEventListener.onChannelClose(remoteAddress.toString(), ctx.channel());
+            NettyRemotingServer.this.channelEventListener.onChannelClose(remoteAddress, ctx.channel());
         }
     }
 
@@ -190,11 +191,11 @@ class NettyConnectManageHandler extends ChannelDuplexHandler {
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent event = (IdleStateEvent) evt;
             if (event.state().equals(IdleState.ALL_IDLE)) {
-                final String remoteAddress = ctx.channel().remoteAddress().toString();
+                final String remoteAddress = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
                 System.out.println("NETTY SERVER PIPELINE: IDLE exception ["+remoteAddress+"]");
                 ctx.channel().close();
                 if (NettyRemotingServer.this.channelEventListener != null) {
-                	NettyRemotingServer.this.channelEventListener.onChannelIdle(remoteAddress.toString(), ctx.channel());
+                	NettyRemotingServer.this.channelEventListener.onChannelIdle(remoteAddress, ctx.channel());
                 }
             }
         }
@@ -203,7 +204,7 @@ class NettyConnectManageHandler extends ChannelDuplexHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        final String remoteAddress = ctx.channel().remoteAddress().toString();
+        final String remoteAddress = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
         System.out.println("NETTY SERVER PIPELINE: exceptionCaught "+remoteAddress);
         System.out.println("NETTY SERVER PIPELINE: exceptionCaught exception.");
 

@@ -31,6 +31,7 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import util.RemotingUtil;
 
 public class NettyRemotingClient {
 public List<String> namesrvAddrList=new ArrayList<String>();
@@ -191,7 +192,7 @@ public void processResponseCommand(final ChannelHandlerContext ctx,final Remotin
             executor.submit(new Runnable() {
                 public void run() {
                     try {
-                        System.out.println(ctx.channel().remoteAddress()+" response:"+cmd);
+                        System.out.println(RemotingUtil.parseChannelRemoteAddr(ctx.channel())+" response:"+cmd);
                     } catch (Throwable e) {
                         System.out.println("execute callback in executor exception, and callback throw");
                     } 
@@ -207,13 +208,12 @@ public void invokeOneway(final Channel channel, final RemotingCommand request) t
            channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
                public void operationComplete(ChannelFuture f) throws Exception {
                    if (!f.isSuccess()) {
-                          System.out.println("send a request command to channel <" + channel.remoteAddress() + "> failed.");
+                          System.out.println("send a request command to channel <" + RemotingUtil.parseChannelRemoteAddr(channel) + "> failed.");
                         }
                     }
                 });
           } catch (Exception e) {
-            System.out.println("write send a request command to channel <" + channel.remoteAddress() + "> failed.");
-            throw new Exception(channel.remoteAddress().toString(), e);
+            System.out.println("write send a request command to channel <" + RemotingUtil.parseChannelRemoteAddr(channel) + "> failed.");
           }    
 }
 
@@ -230,13 +230,13 @@ class NettyConnectManageHandler extends ChannelDuplexHandler {
         ChannelPromise promise) throws Exception {
         super.connect(ctx, remoteAddress, localAddress, promise);
         if (NettyRemotingClient.this.channelEventListener != null) {
-        	  NettyRemotingClient.this.channelEventListener.onChannelConnect(remoteAddress.toString(), ctx.channel());
+        	  NettyRemotingClient.this.channelEventListener.onChannelConnect(RemotingUtil.parseChannelRemoteAddr(ctx.channel()), ctx.channel());
         }
     }
 
     @Override
     public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        final String remoteAddress = ctx.channel().remoteAddress().toString();
+        final String remoteAddress = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
         closeChannel(ctx.channel());
         super.disconnect(ctx, promise);
 
@@ -247,7 +247,7 @@ class NettyConnectManageHandler extends ChannelDuplexHandler {
 
     @Override
     public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        final String remoteAddress = ctx.channel().remoteAddress().toString();
+        final String remoteAddress = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
         closeChannel(ctx.channel());
         super.close(ctx, promise);
         if (NettyRemotingClient.this.channelEventListener != null) {
@@ -260,7 +260,7 @@ class NettyConnectManageHandler extends ChannelDuplexHandler {
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent event = (IdleStateEvent) evt;
             if (event.state().equals(IdleState.ALL_IDLE)) {
-                final String remoteAddress = ctx.channel().remoteAddress().toString();
+                final String remoteAddress = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
                 closeChannel(ctx.channel());
                 if (NettyRemotingClient.this.channelEventListener != null) {
                 	  NettyRemotingClient.this.channelEventListener.onChannelIdle(remoteAddress, ctx.channel());
@@ -272,7 +272,7 @@ class NettyConnectManageHandler extends ChannelDuplexHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        final String remoteAddress = ctx.channel().remoteAddress().toString();
+        final String remoteAddress = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
         closeChannel(ctx.channel());
         if (NettyRemotingClient.this.channelEventListener != null) {
             NettyRemotingClient.this.channelEventListener.onChannelException(remoteAddress, ctx.channel());
