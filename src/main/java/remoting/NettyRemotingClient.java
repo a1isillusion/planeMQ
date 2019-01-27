@@ -2,6 +2,8 @@ package remoting;
 
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -11,9 +13,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import common.Pair;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -40,6 +45,9 @@ public ExecutorService publicExecutor;
 public ExecutorService callbackExecutor;
 public DefaultChannelEventListener channelEventListener;
 public DefaultEventExecutorGroup defaultEventExecutorGroup;
+public HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>> processorTables=new HashMap<Integer, Pair<NettyRequestProcessor,ExecutorService>>();
+public Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessor;
+public List<RPCHook> rpcHooks=new ArrayList<RPCHook>();
 public NettyRemotingClient() {
 	this.channelEventListener=new DefaultChannelEventListener();
 	this.eventLoopGroupWorker=new NioEventLoopGroup(1, new ThreadFactory() {
@@ -81,6 +89,29 @@ public NettyRemotingClient() {
     });
 
 }
+public void shutdown() {
+    try {
+        this.timer.cancel();
+        for (Channel c : this.channelTables.values()) {
+            this.closeChannel(c);
+        }
+        this.channelTables.clear();
+        this.eventLoopGroupWorker.shutdownGracefully();
+        if (this.defaultEventExecutorGroup != null) {
+            this.defaultEventExecutorGroup.shutdownGracefully();
+        }
+    } catch (Exception e) {
+        System.out.println("NettyRemotingClient shutdown exception");
+    }
+
+    if (this.publicExecutor != null) {
+        try {
+            this.publicExecutor.shutdown();
+        } catch (Exception e) {
+            System.out.println("NettyRemotingServer shutdown exception");
+        }
+    }
+}
 public void closeChannel(Channel channel) {
 	if(channel==null) {
 		return;
@@ -107,12 +138,65 @@ public void closeChannel(Channel channel) {
 		channel.close();
 	}
 }
-
+public void registerRPCHook(RPCHook rpcHook) {
+	if(rpcHook!=null&&!rpcHooks.contains(rpcHook)) {
+		rpcHooks.add(rpcHook);
+	}
+}
+public void updateNameServerAddressList(List<String> addrs) {
+    List<String> old = this.namesrvAddrList;
+    boolean update = false;
+    if (!addrs.isEmpty()) {
+        if (null == old) {
+            update = true;
+        } else if (addrs.size() != old.size()) {
+            update = true;
+        } else {
+            for (int i = 0; i < addrs.size() && !update; i++) {
+                if (!old.contains(addrs.get(i))) {
+                    update = true;
+                }
+            }
+        }
+        if (update) {
+            Collections.shuffle(addrs);
+            this.namesrvAddrList=addrs;
+        }
+    }
+}
+public Channel createChannel(String addr) throws Exception{
+	Channel channel=this.channelTables.get(addr);
+	if(channel!=null) {
+		channel.close();
+		channelTables.remove(addr);
+	}
+	ChannelFuture channelFuture=this.bootstrap.connect(addr.split(":")[0], Integer.parseInt(addr.split(":")[1])).sync();
+	channel=channelFuture.channel();
+	this.channelTables.put(addr, channel);
+	return channel;
+}
+public void processResponseCommand(ChannelHandlerContext ctx,RemotingCommand cmd) {
+	System.out.println("processResponse:"+cmd);
+}
+public void invokeOneway(final Channel channel, final RemotingCommand request) throws Exception {
+     try {
+           channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+               public void operationComplete(ChannelFuture f) throws Exception {
+                   if (!f.isSuccess()) {
+                          System.out.println("send a request command to channel <" + channel.remoteAddress() + "> failed.");
+                        }
+                    }
+                });
+          } catch (Exception e) {
+            System.out.println("write send a request command to channel <" + channel.remoteAddress() + "> failed.");
+            throw new Exception(channel.remoteAddress().toString(), e);
+          }    
+}
 
 class NettyClientHandler extends SimpleChannelInboundHandler<RemotingCommand> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg) throws Exception {
-       // processMessageReceived(ctx, msg);
+        processResponseCommand(ctx, msg);
     }
 }
 
