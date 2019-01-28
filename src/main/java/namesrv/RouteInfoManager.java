@@ -75,7 +75,12 @@ public void registerBroker(
                     && 0l == brokerId) {
                     if (registerFirst) {
                         for (Map.Entry<String, List<QueueData>> entry : topicConfig.entrySet()) {
-                           this.topicQueueTable.put(entry.getKey(), entry.getValue());                      	
+                           List<QueueData> queueDatas=this.topicQueueTable.get(entry.getKey());
+                           if(queueDatas==null) {
+                        	   this.topicQueueTable.put(entry.getKey(), entry.getValue());
+                           }else {
+							   queueDatas.addAll(entry.getValue());
+						   }                           	                  	
                         }
                     }
                 }

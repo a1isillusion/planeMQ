@@ -25,5 +25,4 @@ public class BrokerHousekeepingService implements ChannelEventListrener {
 		this.namesrvController.getRouteInfoManager().onChannelDestroy(remoteAddr, channel);
 	}
 
-
 }

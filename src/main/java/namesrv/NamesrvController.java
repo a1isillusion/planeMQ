@@ -32,7 +32,7 @@ public NamesrvController(int port) {
     }, 1, 10, TimeUnit.MINUTES);
     this.remotingExecutor =Executors.newFixedThreadPool(2);
     this.remotingServer=new NettyRemotingServer(port);
-    this.remotingServer.registerDefaultProcessor(new NameSrvRequestProcessor(), this.remotingExecutor);
+    this.remotingServer.registerDefaultProcessor(new NameSrvRequestProcessor(this), this.remotingExecutor);
     this.remotingServer.setChannelEventListener(this.brokerHousekeepingService);
 }
 public RouteInfoManager getRouteInfoManager() {

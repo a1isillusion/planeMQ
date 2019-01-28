@@ -18,7 +18,13 @@ public byte[] body;
 public HashMap<String, String> extFields;
 public RemotingCommand(int code,String body) {
 	this.code=code;
-	this.body=body.getBytes();
+	if(body!=null) {
+	this.body=body.getBytes();	
+	}
+	else {
+		this.body="".getBytes();
+	}
+	this.extFields=new HashMap<String, String>();
 }
 public RemotingCommand() {}
 public ByteBuffer encode() {
