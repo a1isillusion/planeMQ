@@ -34,7 +34,7 @@ import store.MessageExtBrokerInner;
 public class App {
 	public static void main(String[] args) throws Exception {
 		
-/*		MessageExtBrokerInner inner = new MessageExtBrokerInner();
+		MessageExtBrokerInner inner = new MessageExtBrokerInner();
 		inner.setBody("dsa".getBytes());
 		inner.setBornHost("23.3.33.3");
 		inner.setBornTimeStamp(System.currentTimeMillis());
@@ -66,7 +66,7 @@ public class App {
 		command.body = new String("htr1").getBytes();
 		ByteBuffer buffer2 = command.encode();
 		RemotingCommand command2 = RemotingCommand.decode(buffer2);
-		System.out.println(command2);*/
+		System.out.println(command2);
 		 
 		/*
 		 * NettyRemotingClient client=new NettyRemotingClient(); Channel

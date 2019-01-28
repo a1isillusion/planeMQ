@@ -28,7 +28,6 @@ public boolean putMessagePositionInfo(long offset,int size,long tagCode) {
 	byteBuffer.putLong(offset);
 	byteBuffer.putInt(size);
 	byteBuffer.putLong(tagCode);
-	System.out.println(new String(byteBuffer.array()));
 	boolean result=mappedFileQueue.putMessage(byteBuffer.array());
 	return result;
 }
