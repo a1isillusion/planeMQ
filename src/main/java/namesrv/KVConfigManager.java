@@ -88,7 +88,7 @@ private final HashMap<String/* Namespace */, HashMap<String/* Key */, String/* V
 	            this.lock.readLock().lockInterruptibly();
 	            try {
 	                System.out.println("--------------------------------------------------------");
-
+	                System.out.println("configTable SIZE: "+ this.configTable.size());
 	                {
 	                    Iterator<Entry<String, HashMap<String, String>>> it =
 	                        this.configTable.entrySet().iterator();

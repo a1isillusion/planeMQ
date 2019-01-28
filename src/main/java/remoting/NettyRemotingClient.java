@@ -45,7 +45,6 @@ public ChannelEventListrener channelEventListener;
 public DefaultEventExecutorGroup defaultEventExecutorGroup;
 public List<RPCHook> rpcHooks=new ArrayList<RPCHook>();
 public NettyRemotingClient() {
-	this.channelEventListener=new DefaultChannelEventListener();
 	this.eventLoopGroupWorker=new NioEventLoopGroup(1, new ThreadFactory() {
         private AtomicInteger threadIndex = new AtomicInteger(0);
         public Thread newThread(Runnable r) {
@@ -215,6 +214,14 @@ public void invokeOneway(final Channel channel, final RemotingCommand request) t
           } catch (Exception e) {
             System.out.println("write send a request command to channel <" + RemotingUtil.parseChannelRemoteAddr(channel) + "> failed.");
           }    
+}
+
+
+public ChannelEventListrener getChannelEventListener() {
+	return channelEventListener;
+}
+public void setChannelEventListener(ChannelEventListrener channelEventListener) {
+	this.channelEventListener = channelEventListener;
 }
 
 class NettyClientHandler extends SimpleChannelInboundHandler<RemotingCommand> {

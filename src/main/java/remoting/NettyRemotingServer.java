@@ -38,7 +38,6 @@ public Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessor;
 public int port=0;
 public NettyRemotingServer(int port) {
 	this.port=port;
-	this.channelEventListener=new DefaultChannelEventListener();
     this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(4, new ThreadFactory() {
         private AtomicInteger threadIndex = new AtomicInteger(0);
         public Thread newThread(Runnable r) {
@@ -142,6 +141,13 @@ public void processRequestCommend(final ChannelHandlerContext ctx,final Remoting
         ctx.writeAndFlush(response);
 	}
 }
+public ChannelEventListrener getChannelEventListener() {
+	return channelEventListener;
+}
+public void setChannelEventListener(ChannelEventListrener channelEventListener) {
+	this.channelEventListener = channelEventListener;
+}
+
 class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 
     @Override
