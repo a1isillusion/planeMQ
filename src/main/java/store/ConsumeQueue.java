@@ -3,6 +3,8 @@ package store;
 import java.io.File;
 import java.nio.ByteBuffer;
 
+import config.StoreConfig;
+
 public class ConsumeQueue {
 public static final int CQ_STORE_UNIT_SIZE=20;	
 public String topic;
@@ -14,7 +16,8 @@ public long minLogicOffset=0;
 public ConsumeQueue(String topic,int queueId) {
 	this.topic=topic;
 	this.queueId=queueId;
-	File storeDir=new File("G://planeMQ//ConsumeQueue//"+topic+"//"+queueId);
+	this.storePath=StoreConfig.storePath;
+	File storeDir=new File(this.storePath+"//ConsumeQueue//"+topic+"//"+queueId);
 	if(!storeDir.exists()) {
 		storeDir.mkdirs();
 	}

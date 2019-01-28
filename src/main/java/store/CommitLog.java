@@ -3,12 +3,14 @@ package store;
 import java.io.File;
 import java.util.HashMap;
 
+import config.StoreConfig;
+
 public class CommitLog {
 public MappedFileQueue mappedFileQueue;
 public AppendMessageCallback cb;
 public HashMap<String, Long>topicQueueTable;
 public CommitLog() {
-	File storeDir=new File("G://planeMQ//Store");
+	File storeDir=new File(StoreConfig.storePath+"//Store");
 	if(!storeDir.exists()) {
 		storeDir.mkdirs();
 	}
