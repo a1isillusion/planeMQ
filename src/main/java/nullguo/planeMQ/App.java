@@ -26,6 +26,7 @@ import store.CommitLog;
 import store.ConsumeQueue;
 import store.MappedFile;
 import store.MessageExtBrokerInner;
+import store.MessageStore;
 
 /**
  * Hello world!
@@ -34,7 +35,7 @@ import store.MessageExtBrokerInner;
 public class App {
 	public static void main(String[] args) throws Exception {
 		
-		MessageExtBrokerInner inner = new MessageExtBrokerInner();
+/*		MessageExtBrokerInner inner = new MessageExtBrokerInner();
 		inner.setBody("dsa".getBytes());
 		inner.setBornHost("23.3.33.3");
 		inner.setBornTimeStamp(System.currentTimeMillis());
@@ -66,7 +67,7 @@ public class App {
 		command.body = new String("htr1").getBytes();
 		ByteBuffer buffer2 = command.encode();
 		RemotingCommand command2 = RemotingCommand.decode(buffer2);
-		System.out.println(command2);
+		System.out.println(command2);*/
 		 
 		/*
 		 * NettyRemotingClient client=new NettyRemotingClient(); Channel
@@ -82,7 +83,16 @@ public class App {
 		NettyRemotingClient client=new NettyRemotingClient();
 		Channel channel=client.createChannel("localhost:8080");
 		client.invokeOneway(channel, command);*/
-		
-		
+		MessageStore messageStore=new MessageStore();
+		messageStore.createTopicQueue("i", 8);
+		MessageExtBrokerInner message=new MessageExtBrokerInner();
+		message.setTopic("i");
+		message.setQueueId(6);
+		message.setBornTimeStamp(System.currentTimeMillis());
+		message.setBody(new String("test messagestore").getBytes());
+		messageStore.putMessage(message);
+		messageStore.putMessage(message);
+		messageStore.putMessage(message);
+		System.out.println(JSON.toJSONString(messageStore.getMessage("1", "i", 6, 2, 4)));		
 	}
 }

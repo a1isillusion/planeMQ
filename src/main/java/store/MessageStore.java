@@ -47,4 +47,14 @@ public List<MessageExtBrokerInner> getMessage(String clusterName,String topic,in
 	}
 	return result;
 }
+public void createTopicQueue(String topic,int queueNums) {
+	ConcurrentMap<Integer, ConsumeQueue> consumeQueues=this.consumeQueueTable.get(topic);
+	if(consumeQueues==null) {
+		consumeQueues=new ConcurrentHashMap<Integer, ConsumeQueue>();
+		for(int i=0;i<queueNums;i++) {
+			consumeQueues.putIfAbsent(i, new ConsumeQueue(topic, i));
+		}
+		this.consumeQueueTable.put(topic, consumeQueues);
+	}
+}
 }

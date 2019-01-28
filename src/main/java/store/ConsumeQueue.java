@@ -32,6 +32,6 @@ public boolean putMessagePositionInfo(long offset,int size,long tagCode) {
 	return result;
 }
 public ByteBuffer getIndexBuffer(long startIndex) {
-	return mappedFileQueue.selectMappedBuffer(startIndex);
+	return mappedFileQueue.selectMappedBuffer(startIndex*CQ_STORE_UNIT_SIZE);
 }
 }
