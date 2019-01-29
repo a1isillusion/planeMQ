@@ -1,6 +1,7 @@
 package namesrv;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
@@ -31,6 +32,8 @@ public class NameSrvRequestProcessor implements NettyRequestProcessor {
             return this.unregisterBroker(ctx, request);
         case CommandCode.GET_ROUTEINTO_BY_TOPIC:
             return this.getRouteInfoByTopic(ctx, request);
+        case CommandCode.GET_ROUTEINTO:
+        	return this.getRouteInfo(ctx, request);
 		default:
 			break;
 		}
@@ -84,7 +87,7 @@ public class NameSrvRequestProcessor implements NettyRequestProcessor {
              RemotingCommand request) throws Exception {
              final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
              HashMap<String, QueueData> topicQueueConfig=JSON.parseObject(new String(request.getBody()), new TypeReference<HashMap<String,QueueData>>() {});
-             
+
     	       this.namesrvController.getRouteInfoManager().registerBroker(
     	      	    request.getExtFields().get("clusterName"),
     	    	    request.getExtFields().get("brokerAddr"),
@@ -118,6 +121,17 @@ public class NameSrvRequestProcessor implements NettyRequestProcessor {
     	     TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager().pickupTopicRouteData(request.getExtFields().get("topic"));
 
     	     byte[] content = JSON.toJSONString(topicRouteData).getBytes();
+    	     response.setBody(content);
+    	     response.setCode(CommandCode.SUCCESS);
+    	     return response;
+     }
+     public RemotingCommand getRouteInfo(ChannelHandlerContext ctx,
+             RemotingCommand request) throws Exception {
+             final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
+
+    	     Map<String, TopicRouteData> topicRouteDataMap = this.namesrvController.getRouteInfoManager().pickupAllTopicRouteData();
+
+    	     byte[] content = JSON.toJSONString(topicRouteDataMap).getBytes();
     	     response.setBody(content);
     	     response.setCode(CommandCode.SUCCESS);
     	     return response;

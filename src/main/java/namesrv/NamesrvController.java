@@ -27,6 +27,11 @@ public NamesrvController(int port) {
     }, 5, 10, TimeUnit.SECONDS);
     this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
         public void run() {
+            NamesrvController.this.routeInfoManager.printAllPeriodically();
+        }
+    }, 0, 7, TimeUnit.SECONDS);
+    this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+        public void run() {
             NamesrvController.this.kvConfigManager.printAllPeriodically();
         }
     }, 1, 10, TimeUnit.MINUTES);

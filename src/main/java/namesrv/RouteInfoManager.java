@@ -159,6 +159,14 @@ public void unregisterBroker(
         	System.out.println("unregisterBroker Exception");
         }
 }
+public Map<String, TopicRouteData> pickupAllTopicRouteData(){
+	Map<String, TopicRouteData> allTopicRouteData=new HashMap<String, TopicRouteData>();
+	for(String topic:this.topicQueueTable.keySet()) {
+		TopicRouteData topicRouteData=pickupTopicRouteData(topic);
+		allTopicRouteData.put(topic, topicRouteData);
+	}
+	return allTopicRouteData;
+}
 @SuppressWarnings("unchecked")
 public TopicRouteData pickupTopicRouteData(final String topic) {
     TopicRouteData topicRouteData = new TopicRouteData();

@@ -14,8 +14,9 @@ public class CommandCode {
 	public static final int REGISTER_BROKER = 9;
 	public static final int UNREGISTER_BROKER = 10;
 	public static final int GET_ROUTEINTO_BY_TOPIC = 11;
+	public static final int GET_ROUTEINTO=12;
 	//broker
-	public static final int SEND_MESSAGE = 12;
-	public static final int PULL_MESSAGE = 13;
-	public static final int CREATE_TOPIC = 14;
+	public static final int SEND_MESSAGE = 13;
+	public static final int PULL_MESSAGE = 14;
+	public static final int CREATE_TOPIC = 15;
 }
