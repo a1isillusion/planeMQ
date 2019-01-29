@@ -23,4 +23,7 @@ public BrokerController(int port) {
 	this.requestProcessor=new BrokerRequestProcessor(this);
 	this.remotingServer.registerDefaultProcessor(this.requestProcessor, brokerExecutor);
 }
+public MessageStore getMessageStore() {
+	return messageStore;
+}
 }

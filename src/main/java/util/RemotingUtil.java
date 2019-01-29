@@ -23,7 +23,24 @@ public class RemotingUtil {
 
         return "";
     }
+    public static String parseChannelLocalAddr(final Channel channel) {
+        if (null == channel) {
+            return "";
+        }
+        SocketAddress local = channel.localAddress();
+        final String addr = local != null ? local.toString() : "";
 
+        if (addr.length() > 0) {
+            int index = addr.lastIndexOf("/");
+            if (index >= 0) {
+                return addr.substring(index + 1);
+            }
+
+            return addr;
+        }
+
+        return "";
+    }
     public static String parseSocketAddressAddr(SocketAddress socketAddress) {
         if (socketAddress != null) {
             final String addr = socketAddress.toString();
