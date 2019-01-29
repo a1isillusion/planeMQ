@@ -1,7 +1,6 @@
 package namesrv;
 
 import java.util.HashMap;
-import java.util.List;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
@@ -84,7 +83,7 @@ public class NameSrvRequestProcessor implements NettyRequestProcessor {
      public RemotingCommand registerBroker(ChannelHandlerContext ctx,
              RemotingCommand request) throws Exception {
              final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
-             HashMap<String, List<QueueData>> topicQueueConfig=JSON.parseObject(new String(request.getBody()), new TypeReference<HashMap<String, List<QueueData>>>() {});
+             HashMap<String, QueueData> topicQueueConfig=JSON.parseObject(new String(request.getBody()), new TypeReference<HashMap<String,QueueData>>() {});
              
     	       this.namesrvController.getRouteInfoManager().registerBroker(
     	      	    request.getExtFields().get("clusterName"),

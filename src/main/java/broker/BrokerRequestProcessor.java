@@ -21,7 +21,9 @@ public class BrokerRequestProcessor implements NettyRequestProcessor {
         case CommandCode.SEND_MESSAGE:
             return this.sendMessage(ctx, request);
         case CommandCode.PULL_MESSAGE:
-            return this.pullMessage(ctx, request);      
+            return this.pullMessage(ctx, request);     
+        case CommandCode.CREATE_TOPIC:
+            return this.createTopic(ctx, request);         
 		default:
 			break;
 		}
@@ -62,5 +64,16 @@ public class BrokerRequestProcessor implements NettyRequestProcessor {
 				response.setCode(CommandCode.SUCCESS);
 			}
      	    return response;
+    }
+    public RemotingCommand createTopic(ChannelHandlerContext ctx,
+            RemotingCommand request) throws Exception {
+            final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
+            this.brokerController.getMessageStore().createTopic(
+            		request.getExtFields().get("topic"), 
+            		Integer.parseInt(request.getExtFields().get("startQueueId")),
+            		Integer.parseInt(request.getExtFields().get("queueNums"))
+            		);
+            response.setCode(CommandCode.SUCCESS);
+            return response;
     }
 }

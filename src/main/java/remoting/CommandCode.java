@@ -17,4 +17,5 @@ public class CommandCode {
 	//broker
 	public static final int SEND_MESSAGE = 12;
 	public static final int PULL_MESSAGE = 13;
+	public static final int CREATE_TOPIC = 14;
 }

@@ -1,5 +1,6 @@
 package namesrv;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,7 +48,7 @@ public void registerBroker(
         final String brokerName,
         final long brokerId,
         final String haServerAddr,
-        final HashMap<String, List<QueueData>> topicConfig,
+        final HashMap<String,QueueData> topicConfig,
         final Channel channel) {
         try {
             try {
@@ -74,12 +75,14 @@ public void registerBroker(
                 if (null != topicConfig
                     && 0l == brokerId) {
                     if (registerFirst) {
-                        for (Map.Entry<String, List<QueueData>> entry : topicConfig.entrySet()) {
+                        for (Map.Entry<String, QueueData> entry : topicConfig.entrySet()) {
                            List<QueueData> queueDatas=this.topicQueueTable.get(entry.getKey());
                            if(queueDatas==null) {
-                        	   this.topicQueueTable.put(entry.getKey(), entry.getValue());
+                        	   queueDatas=new ArrayList<QueueData>();
+                        	   queueDatas.add(entry.getValue());
+                        	   this.topicQueueTable.put(entry.getKey(), queueDatas);
                            }else {
-							   queueDatas.addAll(entry.getValue());
+							   queueDatas.add(entry.getValue());
 						   }                           	                  	
                         }
                     }
