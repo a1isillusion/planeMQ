@@ -18,6 +18,7 @@ import com.alibaba.fastjson.JSON;
 
 import common.Pair;
 import common.QueueData;
+import common.ResponseFuture;
 import config.SystemConfig;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -47,6 +48,7 @@ public String namesrvAddrChoosed;
 public EventLoopGroup eventLoopGroupWorker;
 public Bootstrap bootstrap=new Bootstrap();
 public ConcurrentHashMap<String, Channel> channelTables=new ConcurrentHashMap<String, Channel>();
+public ConcurrentHashMap<Integer, ResponseFuture> responseTables=new ConcurrentHashMap<Integer, ResponseFuture>();
 public ExecutorService callbackExecutor;
 public ChannelEventListrener channelEventListener;
 public DefaultEventExecutorGroup defaultEventExecutorGroup;
@@ -206,7 +208,7 @@ public void registerBroker() {
 	    this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 	        public void run() {
 	        	try {
-					invoke(NettyRemotingClient.this.namesrvAddrChoosed, command);
+					invokeOneway(NettyRemotingClient.this.namesrvAddrChoosed, command);
 				} catch (Exception e) {
 					System.out.println("register broker error");
 				}
@@ -270,6 +272,11 @@ public void processResponseCommand(final ChannelHandlerContext ctx,final Remotin
                 public void run() {
                     try {
                         System.out.println(RemotingUtil.parseChannelRemoteAddr(ctx.channel())+" response:"+cmd);
+                        ResponseFuture responseFuture=responseTables.get(cmd.getOpaque());
+                        if (responseFuture!=null) {
+							responseFuture.setResponse(cmd);
+							responseTables.remove(cmd.getOpaque());
+						}
                     } catch (Throwable e) {
                         System.out.println("execute callback in executor exception, and callback throw");
                     } 
@@ -280,7 +287,7 @@ public void processResponseCommand(final ChannelHandlerContext ctx,final Remotin
         }
 	}
 }
-public void invoke(final String addr,final RemotingCommand request) throws Exception {
+public void invokeOneway(final String addr,final RemotingCommand request) throws Exception {
 	Channel channel=channelTables.get(addr);
 	if(channel==null) {
 		channel=this.createChannel(addr);
@@ -300,8 +307,31 @@ public void invokeOneway(final Channel channel, final RemotingCommand request) t
             System.out.println("write send a request command to channel <" + RemotingUtil.parseChannelRemoteAddr(channel) + "> failed.");
           }    
 }
-
-
+public RemotingCommand invokeSync(final String addr,final RemotingCommand request,long timeoutMillis) throws Exception {
+	Channel channel=channelTables.get(addr);
+	if(channel==null) {
+		channel=this.createChannel(addr);
+	}
+	return invokeSync(channel, request,timeoutMillis);
+}
+public RemotingCommand invokeSync(final Channel channel, final RemotingCommand request,final long timeoutMillis) throws Exception {
+	ResponseFuture responseFuture=new ResponseFuture(request.getOpaque());
+	responseTables.put(request.getOpaque(), responseFuture);
+	try {
+		request.setRPC_ONEWAY(0);
+        channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+            public void operationComplete(ChannelFuture f) throws Exception {
+                if (!f.isSuccess()) {
+                       System.out.println("send a request command to channel <" + RemotingUtil.parseChannelRemoteAddr(channel) + "> failed.");
+                     }
+                 }
+             });
+       } catch (Exception e) {
+         System.out.println("write send a request command to channel <" + RemotingUtil.parseChannelRemoteAddr(channel) + "> failed.");
+       }
+    return responseFuture.waitResponse(timeoutMillis);
+	
+}
 public ChannelEventListrener getChannelEventListener() {
 	return channelEventListener;
 }

@@ -47,11 +47,11 @@ public class NameSrvRequestProcessor implements NettyRequestProcessor {
            RemotingCommand request) throws Exception {
            final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
 
-            this.namesrvController.getKvConfigManager().putKVConfig(
+           this.namesrvController.getKvConfigManager().putKVConfig(
                 request.getExtFields().get("namespace"),
                 request.getExtFields().get("key"),
                 request.getExtFields().get("value")
-            );
+           );
 
             response.setCode(CommandCode.SUCCESS);
             return response;

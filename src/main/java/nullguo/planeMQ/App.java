@@ -16,6 +16,7 @@ import com.alibaba.fastjson.TypeReference;
 
 import broker.BrokerController;
 import common.QueueData;
+import common.ResponseFuture;
 import config.SystemConfig;
 import io.netty.channel.Channel;
 import namesrv.KVConfigManager;
@@ -109,6 +110,13 @@ public class App {
 		namesrvList.add("localhost:8080");
 		client.updateNameServerAddressList(namesrvList);
 		client.registerBroker();*/
-		BrokerController controller=new BrokerController(8080);
+		NettyRemotingClient client=new NettyRemotingClient();
+		RemotingCommand command=new RemotingCommand(CommandCode.GET_KV_CONFIG,null);
+		command.getExtFields().put("namespace", "1");
+		command.getExtFields().put("key", "2");
+		command.getExtFields().put("value", "3");
+		RemotingCommand response=client.invokeSync("localhost:8038", command, 1000);
+		System.out.println(response);
+		client.shutdown();
 	}
 }
