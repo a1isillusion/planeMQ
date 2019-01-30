@@ -16,6 +16,8 @@ import common.BrokerLiveInfo;
 import common.QueueData;
 import common.TopicRouteData;
 import io.netty.channel.Channel;
+import remoting.CommandCode;
+import remoting.RemotingCommand;
 
 public class RouteInfoManager {
 private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
@@ -159,11 +161,81 @@ public void unregisterBroker(
         	System.out.println("unregisterBroker Exception");
         }
 }
+public TopicRouteData createTopic(String topic,int queueNums) {
+	TopicRouteData topicRouteData=null;
+	try {
+		try {
+			this.lock.readLock().lockInterruptibly();
+			if(this.brokerAddrTable.size()>0) {
+				List<QueueData> queueDataList=new ArrayList<QueueData>();
+				if(this.brokerAddrTable.size()>=queueNums) {
+					int startQueueId=0;
+					for(String brokerName:this.brokerAddrTable.keySet()) {
+						QueueData queueData=new QueueData();
+						queueData.setBrokerName(brokerName);
+						queueData.setReadQueueNums(1);
+						queueData.setWriteQueueNums(1);
+						queueDataList.add(queueData);
+						sendCreateTopicRequest(topic, queueData, startQueueId++);
+						if(queueDataList.size()==queueNums) {
+							break;
+						}
+					}
+				}else {
+				    int remainder=queueNums%this.brokerAddrTable.size();
+				    int nums=queueNums/this.brokerAddrTable.size();
+				    int startQueueId=0;
+					for(String brokerName:this.brokerAddrTable.keySet()) {
+					    QueueData queueData=new QueueData();
+						queueData.setBrokerName(brokerName);
+						if (queueDataList.size()==0) {
+						    queueData.setReadQueueNums(remainder+nums);
+						    queueData.setWriteQueueNums(remainder+nums);
+						    sendCreateTopicRequest(topic, queueData, startQueueId);
+						    startQueueId+=remainder+nums;
+						}else {
+							queueData.setReadQueueNums(nums);
+						    queueData.setWriteQueueNums(nums);
+						    sendCreateTopicRequest(topic, queueData, startQueueId);
+						    startQueueId+=nums;
+						}						
+						queueDataList.add(queueData);
+					}
+				}
+				this.topicQueueTable.put(topic, queueDataList);
+				topicRouteData=pickupTopicRouteData(topic);
+			}
+		}finally {
+			this.lock.readLock().unlock();
+		}		
+	} catch (Exception e) {
+		System.out.println("createTopic Exception");
+	}
+	return topicRouteData;
+}
+public void sendCreateTopicRequest(String topic,QueueData queueData,int startQueueId) throws Exception {
+	String addr=this.brokerAddrTable.get(queueData.getBrokerName()).getBrokerAddrs().get(0l);
+	Channel channel=this.brokerLiveTable.get(addr).getChannel();
+	RemotingCommand request=new RemotingCommand(CommandCode.CREATE_TOPIC,null);
+	request.getExtFields().put("topic",topic);
+	request.getExtFields().put("startQueueId", ""+startQueueId);
+	request.getExtFields().put("queueNums", ""+queueData.getWriteQueueNums());
+	channel.writeAndFlush(request).sync();	
+}
 public Map<String, TopicRouteData> pickupAllTopicRouteData(){
 	Map<String, TopicRouteData> allTopicRouteData=new HashMap<String, TopicRouteData>();
-	for(String topic:this.topicQueueTable.keySet()) {
-		TopicRouteData topicRouteData=pickupTopicRouteData(topic);
-		allTopicRouteData.put(topic, topicRouteData);
+	try {
+		try {
+			this.lock.readLock().lockInterruptibly();
+			for(String topic:this.topicQueueTable.keySet()) {
+				TopicRouteData topicRouteData=pickupTopicRouteData(topic);
+				allTopicRouteData.put(topic, topicRouteData);
+			}
+		}finally {
+			this.lock.readLock().unlock();
+		}		
+	} catch (Exception e) {
+		System.out.println("pickupAllTopicRouteData Exception");
 	}
 	return allTopicRouteData;
 }

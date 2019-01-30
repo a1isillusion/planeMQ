@@ -14,10 +14,13 @@ import java.util.List;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 
+import broker.BrokerController;
 import common.QueueData;
+import config.SystemConfig;
 import io.netty.channel.Channel;
 import namesrv.KVConfigManager;
 import namesrv.NamesrvController;
+import remoting.CommandCode;
 import remoting.NettyRemotingClient;
 import remoting.NettyRemotingServer;
 import remoting.RemotingCommand;
@@ -27,6 +30,7 @@ import store.ConsumeQueue;
 import store.MappedFile;
 import store.MessageExtBrokerInner;
 import store.MessageStore;
+import util.RemotingUtil;
 
 /**
  * Hello world!
@@ -75,17 +79,23 @@ public class App {
 		 * RemotingCommand(1,"dsa"); client.invokeOneway(channel,command);
 		 * Thread.sleep(3000); client.shutdown();
 		 */
-/*		RemotingCommand command=new RemotingCommand(6,null);
-		command.getExtFields().put("namespace", "g");
-		command.getExtFields().put("key", "r");
-		command.getExtFields().put("value", "e");
-		command.setRPC_ONEWAY(0);
-		NettyRemotingClient client=new NettyRemotingClient();
+/*		NettyRemotingClient client=new NettyRemotingClient();
 		Channel channel=client.createChannel("localhost:8080");
+		HashMap<String, QueueData> topicQueueConfig=new HashMap<String, QueueData>();
+		QueueData queueData=new QueueData();
+		queueData.setBrokerName(SystemConfig.brokerName);
+		queueData.setReadQueueNums(8);
+		queueData.setWriteQueueNums(8);
+		topicQueueConfig.put("i", queueData);
+		RemotingCommand command=new RemotingCommand(CommandCode.REGISTER_BROKER,null);
+		command.getExtFields().put("clusterName", SystemConfig.clusterName);
+		command.getExtFields().put("brokerAddr", RemotingUtil.parseChannelLocalAddr(channel));
+		command.getExtFields().put("brokerName", SystemConfig.brokerName);
+		command.getExtFields().put("brokerId", ""+SystemConfig.brokerId);
+		command.setBody(JSON.toJSONString(topicQueueConfig).getBytes());
+		command.setRPC_ONEWAY(0);
 		client.invokeOneway(channel, command);*/
-		MessageStore messageStore=new MessageStore();
-		messageStore.createTopicQueue("i", 8);
-		MessageExtBrokerInner message=new MessageExtBrokerInner();
+/*		MessageExtBrokerInner message=new MessageExtBrokerInner();
 		message.setTopic("i");
 		message.setQueueId(6);
 		message.setBornTimeStamp(System.currentTimeMillis());
@@ -93,6 +103,12 @@ public class App {
 		messageStore.putMessage(message);
 		messageStore.putMessage(message);
 		messageStore.putMessage(message);
-		System.out.println(JSON.toJSONString(messageStore.getMessage("1", "i", 6, 2, 4)));		
+		System.out.println(JSON.toJSONString(messageStore.getMessage("1", "i", 6, 0, 4)));	*/
+/*		NettyRemotingClient client=new NettyRemotingClient();
+		List<String> namesrvList=new ArrayList<String>();
+		namesrvList.add("localhost:8080");
+		client.updateNameServerAddressList(namesrvList);
+		client.registerBroker();*/
+		BrokerController controller=new BrokerController(8080);
 	}
 }
