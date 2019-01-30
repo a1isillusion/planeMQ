@@ -6,8 +6,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MappedFileQueue {
+private ReentrantLock lock=new ReentrantLock();
 public String storePath;
 public int mappedFileSize;
 public CopyOnWriteArrayList<MappedFile> mappedFiles= new CopyOnWriteArrayList<MappedFile>();
@@ -33,8 +35,27 @@ public MappedFile getLastMappedFile() {
 	return mappedFileLast;
 }
 public MappedFile getLastMappedFile(boolean needCreate) {
-	MappedFile mappedFileLast=getLastMappedFile();
-	if(mappedFileLast==null&&needCreate) {
+		MappedFile mappedFileLast = getLastMappedFile();
+		if (mappedFileLast == null && needCreate) {
+			synchronized (this) {
+				mappedFileLast = getLastMappedFile();
+				if (mappedFileLast == null && needCreate) {
+					try {
+						mappedFileLast = new MappedFile(storePath, committedWhere, mappedFileSize);
+					} catch (IOException e) {
+						System.out.println("创建MappedFile失败!");
+					}
+					if (mappedFileLast != null) {
+						this.mappedFiles.add(mappedFileLast);
+					}
+				}
+			}
+		}
+		return mappedFileLast;
+}
+public void createNewMappedFile() {
+	if(this.lock.tryLock()) {
+		committedWhere+=mappedFileSize;
 		MappedFile mappedFile=null;
 		try {
 			mappedFile=new MappedFile(storePath, committedWhere, mappedFileSize);
@@ -44,22 +65,8 @@ public MappedFile getLastMappedFile(boolean needCreate) {
 		if(mappedFile!=null) {
 			this.mappedFiles.add(mappedFile);
 		}
-		return mappedFile;
+		this.lock.unlock();
 	}
-	return mappedFileLast;
-}
-public MappedFile createNewMappedFile() {
-	committedWhere+=mappedFileSize;
-	MappedFile mappedFile=null;
-	try {
-		mappedFile=new MappedFile(storePath, committedWhere, mappedFileSize);
-	}catch (IOException e) {
-		System.out.println("创建MappedFile失败！");
-	}
-	if(mappedFile!=null) {
-		this.mappedFiles.add(mappedFile);
-	}	
-	return mappedFile;
 }
 public MappedFile findMappedFileByOffset(long offset) {
 	MappedFile mappedFile=null;
@@ -73,8 +80,8 @@ public AppendMessageResult putMessage(MessageExtBrokerInner msg,AppendMessageCal
 	MappedFile mappedFile=getLastMappedFile(true);
 	AppendMessageResult result=mappedFile.appendMessage(msg, cb);
 	if(result.getStatus().equals(AppendMessageResult.STATUS_FAIL)) {
-		mappedFile=createNewMappedFile();
-		result=mappedFile.appendMessage(msg, cb);
+		createNewMappedFile();
+		putMessage(msg,cb);
 	}
 	return result;
 }
@@ -82,8 +89,8 @@ public boolean putMessage(byte[] msg) {
 	MappedFile mappedFile=getLastMappedFile(true);
 	boolean result=mappedFile.appendMessage(msg);
 	if(result==false) {
-		mappedFile=createNewMappedFile();
-		result=mappedFile.appendMessage(msg);
+		createNewMappedFile();
+		putMessage(msg);
 	}
 	return result;
 }
