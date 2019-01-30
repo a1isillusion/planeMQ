@@ -15,6 +15,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 
 import broker.BrokerController;
+import client.DefaultMQProducter;
+import common.Message;
 import common.QueueData;
 import common.ResponseFuture;
 import config.SystemConfig;
@@ -110,13 +112,13 @@ public class App {
 		namesrvList.add("localhost:8080");
 		client.updateNameServerAddressList(namesrvList);
 		client.registerBroker();*/
-		NettyRemotingClient client=new NettyRemotingClient();
-		RemotingCommand command=new RemotingCommand(CommandCode.GET_KV_CONFIG,null);
-		command.getExtFields().put("namespace", "1");
-		command.getExtFields().put("key", "2");
-		command.getExtFields().put("value", "3");
-		RemotingCommand response=client.invokeSync("localhost:8038", command, 1000);
-		System.out.println(response);
-		client.shutdown();
+		DefaultMQProducter producter=new DefaultMQProducter();
+		producter.setNamesrvAddr("localhost:8038");
+		producter.getAndUpdateRouteInto();
+		for(int i=0;i<1000;i++) {
+			producter.sendMessage(new Message("i", new String("producter send message"+i).getBytes()));
+			Thread.sleep(50);
+		}		
+		producter.shutdown();
 	}
 }

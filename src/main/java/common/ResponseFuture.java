@@ -16,6 +16,9 @@ public ResponseFuture(int opaque) {
 public void setResponse(RemotingCommand response) {
 	this.response=response;
 }
+public long getCreateTimestamp() {
+	return this.createTimestamp;
+}
 public RemotingCommand waitResponse(final long timeoutMillis) throws Exception{
 	this.countDownLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
 	return this.response;

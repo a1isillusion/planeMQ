@@ -4,8 +4,10 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -93,7 +95,11 @@ public NettyRemotingClient() {
                         new NettyClientHandler());
                 }
     });
-
+    this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+        public void run() {
+        	NettyRemotingClient.this.scanResponseTables();
+        }
+    }, 20, 20, TimeUnit.SECONDS);
 }
 public void shutdown() {
     try {
@@ -102,6 +108,7 @@ public void shutdown() {
             this.closeChannel(c);
         }
         this.channelTables.clear();
+        this.responseTables.clear();
         this.eventLoopGroupWorker.shutdownGracefully();
         if (this.defaultEventExecutorGroup != null) {
             this.defaultEventExecutorGroup.shutdownGracefully();
@@ -196,6 +203,12 @@ public void updateNameServerAddressList(List<String> addrs) {
         }
     }
 }
+public void updateNameServerAddressList(String addrs) {
+	String [] spiltAddrs=addrs.split(";");
+	for(String addr:spiltAddrs) {
+		this.namesrvAddrList.add(addr);
+	}
+}
 public void registerBroker() {
 	if (this.namesrvAddrList!=null&&this.namesrvAddrList.size()>0) {
 		this.namesrvAddrChoosed=this.namesrvAddrList.get(0);
@@ -215,6 +228,18 @@ public void registerBroker() {
 	        }
 	    }, 0, 20, TimeUnit.SECONDS);
 	}
+}
+public void scanResponseTables() {
+    Iterator<Entry<Integer, ResponseFuture>> it = this.responseTables.entrySet().iterator();
+    while (it.hasNext()) {
+        Entry<Integer, ResponseFuture> next = it.next();
+        ResponseFuture rep = next.getValue();
+
+        if ((rep.getCreateTimestamp() + 10000) <= System.currentTimeMillis()) {
+            it.remove();
+            System.out.println("remove timeout request, " + rep.opaque);
+        }
+    }
 }
 public Channel createChannel(String addr) throws Exception{
 	Channel channel=this.channelTables.get(addr);
