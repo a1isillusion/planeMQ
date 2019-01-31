@@ -214,7 +214,7 @@ public void registerBroker() {
 		this.namesrvAddrChoosed=this.namesrvAddrList.get(0);
 		final RemotingCommand command=new RemotingCommand(CommandCode.REGISTER_BROKER,null);
 		command.getExtFields().put("clusterName", SystemConfig.clusterName);
-		command.getExtFields().put("brokerAddr", SystemConfig.localAddr);
+		command.getExtFields().put("brokerPort", SystemConfig.brokerPort);
 		command.getExtFields().put("brokerName", SystemConfig.brokerName);
 		command.getExtFields().put("brokerId", ""+SystemConfig.brokerId);
 		command.setBody(JSON.toJSONString(new HashMap<String, QueueData>()).getBytes());

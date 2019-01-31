@@ -12,6 +12,7 @@ import io.netty.channel.ChannelHandlerContext;
 import remoting.CommandCode;
 import remoting.NettyRequestProcessor;
 import remoting.RemotingCommand;
+import util.RemotingUtil;
 
 public class NameSrvRequestProcessor implements NettyRequestProcessor {
     public NamesrvController namesrvController;
@@ -90,7 +91,7 @@ public class NameSrvRequestProcessor implements NettyRequestProcessor {
 
     	       this.namesrvController.getRouteInfoManager().registerBroker(
     	      	    request.getExtFields().get("clusterName"),
-    	    	    request.getExtFields().get("brokerAddr"),
+    	    	    RemotingUtil.parseChannelRemoteAddr(ctx.channel()).split(":")[0]+":"+request.getExtFields().get("brokerPort"),
     	    	    request.getExtFields().get("brokerName"),
     	    	    Long.parseLong(request.getExtFields().get("brokerId")),
     	    	    request.getExtFields().get("haServerAddr"),
@@ -107,7 +108,7 @@ public class NameSrvRequestProcessor implements NettyRequestProcessor {
 
     	    this.namesrvController.getRouteInfoManager().unregisterBroker(
     	         request.getExtFields().get("clusterName"),
-    	         request.getExtFields().get("brokerAddr"),
+    	         RemotingUtil.parseChannelRemoteAddr(ctx.channel()).split(":")[0]+":"+request.getExtFields().get("brokerPort"),
     	         request.getExtFields().get("brokerName"),
     	         Long.parseLong(request.getExtFields().get("brokerId")));
 

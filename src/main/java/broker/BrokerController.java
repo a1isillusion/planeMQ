@@ -1,11 +1,10 @@
 package broker;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import config.SystemConfig;
 import remoting.NettyRemotingClient;
 import remoting.NettyRemotingServer;
 import remoting.NettyRequestProcessor;
@@ -28,9 +27,7 @@ public BrokerController(int port) {
 	this.remotingServer.registerDefaultProcessor(this.requestProcessor, brokerExecutor);
 	this.remotingClient=new NettyRemotingClient();
 	this.remotingClient.registerDefaultProcessor(this.requestProcessor, brokerExecutor);
-	List<String> nList=new ArrayList<String>();
-	nList.add("localhost:8038");
-	this.remotingClient.updateNameServerAddressList(nList);
+	this.remotingClient.updateNameServerAddressList(SystemConfig.namesrvAddr);
 	this.remotingClient.registerBroker();
 }
 public MessageStore getMessageStore() {
