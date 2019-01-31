@@ -1,6 +1,7 @@
 package broker;
 
 import java.util.List;
+import java.util.Map;
 
 import com.alibaba.fastjson.JSON;
 
@@ -23,7 +24,9 @@ public class BrokerRequestProcessor implements NettyRequestProcessor {
         case CommandCode.PULL_MESSAGE:
             return this.pullMessage(ctx, request);     
         case CommandCode.CREATE_TOPIC:
-            return this.createTopic(ctx, request);         
+            return this.createTopic(ctx, request);
+        case CommandCode.GET_OFFSET:
+            return this.getOffset(ctx, request);  
 		default:
 			break;
 		}
@@ -75,5 +78,13 @@ public class BrokerRequestProcessor implements NettyRequestProcessor {
             		);
             response.setCode(CommandCode.SUCCESS);
             return response;
+    }
+    public RemotingCommand getOffset(ChannelHandlerContext ctx,
+            RemotingCommand request) throws Exception {
+            final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
+            Map<String,Map<Integer,Long>> totalOffset=this.brokerController.getMessageStore().getTotalOffset();
+            response.setBody(JSON.toJSONString(totalOffset).getBytes());
+            response.setCode(CommandCode.SUCCESS);
+            return response;         
     }
 }

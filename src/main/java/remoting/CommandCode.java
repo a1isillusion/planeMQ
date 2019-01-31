@@ -19,4 +19,5 @@ public class CommandCode {
 	public static final int SEND_MESSAGE = 13;
 	public static final int PULL_MESSAGE = 14;
 	public static final int CREATE_TOPIC = 15;
+	public static final int GET_OFFSET = 16;
 }

@@ -1,5 +1,6 @@
 package client;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,5 +74,18 @@ public String getMessageQueueAddr(MessageQueue messageQueue) {
 		}
 	}
 	return null;
+}
+public List<String> getAllBrokerAddr(){
+	List<String> allBrokerAddr=new ArrayList<String>();
+	for(String topic:this.topicRouteDataList.keySet()){
+		TopicRouteData topicRouteData=this.topicRouteDataList.get(topic);
+		List<BrokerData> brokerDatas=topicRouteData.getBrokerDatas();
+		for(BrokerData brokerData:brokerDatas) {
+			if(allBrokerAddr.contains(brokerData.getBrokerAddrs().get(0l))) {
+				allBrokerAddr.add(brokerData.getBrokerAddrs().get(0l));
+			}
+		}
+	}
+	return allBrokerAddr;
 }
 }

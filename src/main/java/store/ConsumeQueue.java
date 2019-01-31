@@ -34,4 +34,8 @@ public boolean putMessagePositionInfo(long offset,int size,long tagCode) {
 public ByteBuffer getIndexBuffer(long startIndex) {
 	return mappedFileQueue.selectMappedBuffer(startIndex*CQ_STORE_UNIT_SIZE);
 }
+public long getOffset() {
+	MappedFile mappedFileLast=this.mappedFileQueue.getLastMappedFile();
+	return mappedFileLast==null?0l:(mappedFileLast.fileFromOffset+mappedFileLast.wrotePosition)/CQ_STORE_UNIT_SIZE;
+}
 }

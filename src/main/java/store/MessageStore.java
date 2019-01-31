@@ -2,7 +2,9 @@ package store;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -56,5 +58,17 @@ public void createTopic(String topic,int startQueueId,int queueNums) {
 		}
 		this.consumeQueueTable.put(topic, consumeQueues);
 	}
+}
+public Map<String,Map<Integer,Long>> getTotalOffset(){
+	Map<String,Map<Integer,Long>> totalOffset=new HashMap<String, Map<Integer,Long>>();
+	for(String topic:this.consumeQueueTable.keySet()) {
+		HashMap<Integer, Long> queueOffset=new HashMap<Integer, Long>();
+		ConcurrentMap<Integer, ConsumeQueue> queueMap=this.consumeQueueTable.get(topic);
+		for(Integer queueId:queueMap.keySet()) {
+			queueOffset.put(queueId, queueMap.get(queueId).getOffset());
+		}
+		totalOffset.put(topic, queueOffset);
+	}
+	return totalOffset;
 }
 }
