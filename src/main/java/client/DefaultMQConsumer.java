@@ -22,6 +22,9 @@ public String namesrvAddrChoosed;
 public String topic;
 public MessageListener messageListener;
 public NettyRemotingClient remotingClient;
+public DefaultMQConsumer(){
+	this.remotingClient=new NettyRemotingClient();
+}
 public void setNamesrvAddr(String addrs) {
 	String [] spiltAddrs=addrs.split(";");
 	for(String addr:spiltAddrs) {

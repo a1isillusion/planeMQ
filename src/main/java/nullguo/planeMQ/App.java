@@ -16,6 +16,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 
 import broker.BrokerController;
+import client.DefaultMQConsumer;
 import client.DefaultMQProducter;
 import client.LocalOffsetStore;
 import common.Message;
@@ -114,15 +115,19 @@ public class App {
 		namesrvList.add("localhost:8080");
 		client.updateNameServerAddressList(namesrvList);
 		client.registerBroker();*/
-/*		DefaultMQProducter producter=new DefaultMQProducter();
+		DefaultMQProducter producter=new DefaultMQProducter();
 		producter.setNamesrvAddr("localhost:8038");
 		producter.getAndUpdateRouteInto();
-		for(int i=0;i<1000;i++) {
-			producter.sendMessage(new Message("i", new String("producter send message"+i).getBytes()));
+		for(int i=0;i<100;i++) {
+			producter.sendMessage(new Message("i", new String("n:"+i).getBytes()));
 			Thread.sleep(50);
 		}		
-		producter.shutdown();*/
-		MessageStore store=new MessageStore();
+		DefaultMQConsumer consumer=new DefaultMQConsumer();
+		consumer.setNamesrvAddr("localhost:8038");
+		consumer.start();
+		consumer.localOffsetStore.paintOffsetTable();
+		consumer.shutdown();
+/*		MessageStore store=new MessageStore();
 		store.createTopic("i", 0, 8);
 		MessageExtBrokerInner message=new MessageExtBrokerInner();
 		message.setTopic("i");
@@ -137,6 +142,6 @@ public class App {
 		Map<String,Map<Integer,Long>> totalOffset=JSON.parseObject(JSON.toJSONString(totalOffset1),new TypeReference<Map<String, Map<Integer,Long>>>() {});
         LocalOffsetStore offsetStore=new LocalOffsetStore();
         offsetStore.updateOffsetTable(totalOffset);
-        offsetStore.paintOffsetTable();
+        offsetStore.paintOffsetTable();*/
 	}
 }

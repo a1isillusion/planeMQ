@@ -81,7 +81,7 @@ public List<String> getAllBrokerAddr(){
 		TopicRouteData topicRouteData=this.topicRouteDataList.get(topic);
 		List<BrokerData> brokerDatas=topicRouteData.getBrokerDatas();
 		for(BrokerData brokerData:brokerDatas) {
-			if(allBrokerAddr.contains(brokerData.getBrokerAddrs().get(0l))) {
+			if(!allBrokerAddr.contains(brokerData.getBrokerAddrs().get(0l))) {
 				allBrokerAddr.add(brokerData.getBrokerAddrs().get(0l));
 			}
 		}

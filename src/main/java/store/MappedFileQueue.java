@@ -81,7 +81,7 @@ public AppendMessageResult putMessage(MessageExtBrokerInner msg,AppendMessageCal
 	AppendMessageResult result=mappedFile.appendMessage(msg, cb);
 	if(result.getStatus().equals(AppendMessageResult.STATUS_FAIL)) {
 		createNewMappedFile();
-		putMessage(msg,cb);
+		return putMessage(msg,cb);
 	}
 	return result;
 }
@@ -90,7 +90,7 @@ public boolean putMessage(byte[] msg) {
 	boolean result=mappedFile.appendMessage(msg);
 	if(result==false) {
 		createNewMappedFile();
-		putMessage(msg);
+		return putMessage(msg);
 	}
 	return result;
 }
