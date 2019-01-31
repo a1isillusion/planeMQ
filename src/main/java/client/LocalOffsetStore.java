@@ -35,6 +35,9 @@ public synchronized void updateOffset(String topic,int queueId,long offset) {
 public long getOffset(String topic,int queueId) {
 	return this.consumeTable.get(topic).get(queueId);
 }
+public boolean finishConsume(String topic,int queueId,long offset) {
+	return this.offsetTable.get(topic).get(queueId)<=this.consumeTable.get(topic).get(queueId);
+}
 public void paintOffsetTable() {
 	for(String topic:this.offsetTable.keySet()) {
 		Map<Integer, Long> queueOffset=this.offsetTable.get(topic);

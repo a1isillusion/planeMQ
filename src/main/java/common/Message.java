@@ -1,5 +1,7 @@
 package common;
 
+import store.MessageExtBrokerInner;
+
 public class Message {
 public String topic;
 public byte[] body;
@@ -7,6 +9,10 @@ public byte[] body;
 public Message(String topic, byte[] body) {
 	this.topic = topic;
 	this.body = body;
+}
+public Message(MessageExtBrokerInner msg) {
+	this.topic=msg.getTopic();
+	this.body=msg.getBody();
 }
 public String getTopic() {
 	return topic;

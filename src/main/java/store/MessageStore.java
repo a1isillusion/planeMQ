@@ -23,7 +23,7 @@ public boolean putMessage(MessageExtBrokerInner msg) {
 		if(consumeQueue!=null) {
 			AppendMessageResult appendMessageResult=this.commitLog.putMessage(msg);
 			if(appendMessageResult.getStatus().equals(AppendMessageResult.STATUS_SUCCESS)) {
-				result=consumeQueue.putMessagePositionInfo(appendMessageResult.getOffset(), appendMessageResult.getSize(), 0l);
+				result=consumeQueue.putMessagePositionInfo(appendMessageResult.getFileOffset(), appendMessageResult.getSize(), 0l);
 			}
 		}
 	}

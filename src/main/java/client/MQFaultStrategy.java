@@ -34,6 +34,16 @@ public int getTopicQueueNums(String topic) {
 	}
 	return queueNums;
 }
+public String getAddrByQueueId(String topic,int queueId) {
+    String brokerName=getBrokerName(topic, queueId);
+    TopicRouteData topicRouteData=this.topicRouteDataList.get(topic);
+    for(BrokerData brokerData:topicRouteData.getBrokerDatas()) {
+    	if(brokerData.getBrokerName().equals(brokerName)) {
+    		return brokerData.getBrokerAddrs().get(0l);
+    	}
+    }
+    return null;
+}
 public String getBrokerName(String topic,int queueId) {
 	TopicRouteData topicRouteData=this.topicRouteDataList.get(topic);
 	int queueNums=0;

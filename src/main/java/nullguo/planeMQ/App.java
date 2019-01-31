@@ -19,6 +19,7 @@ import broker.BrokerController;
 import client.DefaultMQConsumer;
 import client.DefaultMQProducter;
 import client.LocalOffsetStore;
+import client.MessageListener;
 import common.Message;
 import common.QueueData;
 import common.ResponseFuture;
@@ -119,13 +120,22 @@ public class App {
 		producter.setNamesrvAddr("localhost:8038");
 		producter.getAndUpdateRouteInto();
 		for(int i=0;i<100;i++) {
-			producter.sendMessage(new Message("i", new String("n:"+i).getBytes()));
+			producter.sendMessage(new Message("i",new String("i:"+i).getBytes()));
 			Thread.sleep(50);
-		}		
+		}
+		
 		DefaultMQConsumer consumer=new DefaultMQConsumer();
+		consumer.subscribe("i");
 		consumer.setNamesrvAddr("localhost:8038");
+		consumer.registerMessageListener(new MessageListener() {			
+			public void consumeMessage(List<Message> msgs) {
+				for(Message message:msgs) {
+				System.out.println("consuming message :"+new String(message.getBody()));		
+				}						
+			}
+		});
 		consumer.start();
-		consumer.localOffsetStore.paintOffsetTable();
+		consumer.localOffsetStore.paintConsumeTable();
 		consumer.shutdown();
 /*		MessageStore store=new MessageStore();
 		store.createTopic("i", 0, 8);

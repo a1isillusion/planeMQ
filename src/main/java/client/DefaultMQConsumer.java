@@ -8,10 +8,13 @@ import java.util.Map;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 
+import common.Message;
 import common.TopicRouteData;
+import config.SystemConfig;
 import remoting.CommandCode;
 import remoting.NettyRemotingClient;
 import remoting.RemotingCommand;
+import store.MessageExtBrokerInner;
 
 public class DefaultMQConsumer {
 private long defaultTimeoutMillis=1000;
@@ -63,6 +66,33 @@ public void registerMessageListener(MessageListener messageListener) {
 public void start() {
 	getAndUpdateRouteInto();
 	getOffset();
+	this.localOffsetStore.syncConsumeTable();
+	int queueNums=this.mqFaultStrategy.getTopicQueueNums(this.topic);
+	try {
+		for(int queueId=0;queueId<queueNums;queueId++) {
+			long offset=this.localOffsetStore.getOffset(this.topic, queueId);
+			while(!this.localOffsetStore.finishConsume(topic, queueId, offset)) {
+				String addr=this.mqFaultStrategy.getAddrByQueueId(topic, queueId);			
+				RemotingCommand request=new RemotingCommand(CommandCode.PULL_MESSAGE,null);
+				request.getExtFields().put("clusterName", SystemConfig.clusterName);
+				request.getExtFields().put("topic", this.topic);
+				request.getExtFields().put("queueId", ""+queueId);
+				request.getExtFields().put("startOffset", ""+offset);
+				request.getExtFields().put("maxMsgNums", "1");
+				RemotingCommand response=this.remotingClient.invokeSync(addr, request, 1000);
+				List<MessageExtBrokerInner> messageExtBrokerInners=JSON.parseObject(new String(response.getBody()),new TypeReference<List<MessageExtBrokerInner>>() {});
+				List<Message> messages=new ArrayList<Message>();
+				for(MessageExtBrokerInner msg:messageExtBrokerInners) {
+					Message message=new Message(msg);
+					messages.add(message);
+				}
+				this.messageListener.consumeMessage(messages);
+				this.localOffsetStore.updateOffset(topic, queueId, ++offset);
+			}
+		}
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
 }
 public void shutdown() {
 	this.remotingClient.shutdown();
