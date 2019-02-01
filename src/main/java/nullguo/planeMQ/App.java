@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import client.MessageListener;
 import common.Message;
 import common.QueueData;
 import common.ResponseFuture;
+import config.StoreConfig;
 import config.SystemConfig;
 import io.netty.channel.Channel;
 import namesrv.KVConfigManager;
@@ -35,6 +37,7 @@ import store.AppendMessageCallback;
 import store.CommitLog;
 import store.ConsumeQueue;
 import store.MappedFile;
+import store.MappedFileQueue;
 import store.MessageExtBrokerInner;
 import store.MessageStore;
 import util.RemotingUtil;
@@ -116,7 +119,7 @@ public class App {
 		namesrvList.add("localhost:8080");
 		client.updateNameServerAddressList(namesrvList);
 		client.registerBroker();*/
-		DefaultMQProducter producter=new DefaultMQProducter();
+/*		DefaultMQProducter producter=new DefaultMQProducter();
 		producter.setNamesrvAddr("localhost:8038");
 		producter.getAndUpdateRouteInto();
 		for(int i=0;i<100;i++) {
@@ -136,7 +139,7 @@ public class App {
 		});
 		consumer.start();
 		consumer.localOffsetStore.paintConsumeTable();
-		consumer.shutdown();
+		consumer.shutdown();*/
 /*		MessageStore store=new MessageStore();
 		store.createTopic("i", 0, 8);
 		MessageExtBrokerInner message=new MessageExtBrokerInner();
@@ -153,5 +156,26 @@ public class App {
         LocalOffsetStore offsetStore=new LocalOffsetStore();
         offsetStore.updateOffsetTable(totalOffset);
         offsetStore.paintOffsetTable();*/
+/*		MessageExtBrokerInner message=new MessageExtBrokerInner();
+		message.setTopic("i");
+		message.setQueueId(6);
+		message.setBornTimeStamp(System.currentTimeMillis());
+		message.setBody(new String("test messagestore").getBytes());
+		mappedFileQueue.putMessage(message, new AppendMessageCallback());
+		mappedFileQueue.putMessage(message, new AppendMessageCallback());
+		mappedFileQueue.backup();*/
+/*		MessageExtBrokerInner message=new MessageExtBrokerInner();
+		message.setTopic("i");
+		message.setQueueId(6);
+		message.setBornTimeStamp(System.currentTimeMillis());
+		message.setBody(new String("test messagestore").getBytes());
+        MessageStore store=new MessageStore();
+        store.createTopic("i", 0, 10);
+        store.putMessage(message);
+        store.backup();*/
+        MessageStore store=new MessageStore();
+        store.recover();
+        System.out.println(JSON.toJSONString( store.getTotalOffset()));
+        System.out.println(JSON.toJSONString(store.getMessage("", "i", 6, 0, 1)));
 	}
 }

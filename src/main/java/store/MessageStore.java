@@ -1,12 +1,17 @@
 package store;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import config.StoreConfig;
 
 public class MessageStore {
 public CommitLog commitLog;
@@ -70,5 +75,33 @@ public Map<String,Map<Integer,Long>> getTotalOffset(){
 		totalOffset.put(topic, queueOffset);
 	}
 	return totalOffset;
+}
+public void backup() throws IOException {
+	this.commitLog.mappedFileQueue.backup();
+	for(String topic:this.consumeQueueTable.keySet()) {
+		ConcurrentMap<Integer, ConsumeQueue> consumeQueueMap=this.consumeQueueTable.get(topic);
+		for(Integer queueId:consumeQueueMap.keySet()) {
+			consumeQueueMap.get(queueId).mappedFileQueue.backup();
+		}
+	}
+}
+public void recover() throws IOException {
+	this.commitLog.mappedFileQueue.recover();
+	File dir=new File(StoreConfig.storePath+"//ConsumeQueue");
+	for(File topicDir:dir.listFiles()) {
+		List<Integer> queueIdList=new ArrayList<Integer>();
+		for(File queueDir:topicDir.listFiles()) {
+			queueIdList.add(Integer.parseInt(queueDir.getName()));
+		}
+		int startQueueId=Collections.min(queueIdList);
+		int queueNums=Collections.max(queueIdList)-startQueueId+1;
+		createTopic(topicDir.getName(), startQueueId, queueNums);
+	}
+	for(String topic:this.consumeQueueTable.keySet()) {
+		ConcurrentMap<Integer, ConsumeQueue> consumeQueueMap=this.consumeQueueTable.get(topic);
+		for(Integer queueId:consumeQueueMap.keySet()) {
+			consumeQueueMap.get(queueId).mappedFileQueue.recover();
+		}
+	}
 }
 }

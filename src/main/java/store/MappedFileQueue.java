@@ -2,11 +2,19 @@ package store;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 
 public class MappedFileQueue {
 private ReentrantLock lock=new ReentrantLock();
@@ -110,22 +118,56 @@ public ByteBuffer selectMappedBuffer(long offset) {
 	}
 	return result;
 }
-public void reput() {//待完善
+@SuppressWarnings("resource")
+public void recover() throws IOException {//待完善
+	RandomAccessFile raFile = new RandomAccessFile(new File(storePath,".bak"), "rw");
+	FileChannel fileChannel=raFile.getChannel();
+	MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileChannel.size());
+	int size=buffer.getInt();
+	byte[] bs=new byte[size];
+	buffer.get(bs);
+	Map<String, Integer> positionMap=JSON.parseObject(new String(bs), new TypeReference<Map<String, Integer>>() {});
 	File dir=new File(storePath);
 	if(dir.isDirectory()) {
 		mappedFiles.clear();
 		ArrayList<Long> fileNameList=new ArrayList<Long>();
 		for(File file:dir.listFiles()) {
-			fileNameList.add(Long.parseLong(file.getName()));
+			if(!file.getName().equals(".bak")) {
+				fileNameList.add(Long.parseLong(file.getName()));
+			}			
 		}
 		Collections.sort(fileNameList);
 		for(Long name:fileNameList) {
 			try {
-				this.mappedFiles.add(new MappedFile(storePath, name, mappedFileSize));
+				MappedFile mappedFile=new MappedFile(storePath, name, mappedFileSize);
+				mappedFile.wrotePosition=positionMap.get(""+name);
+				this.mappedFiles.add(mappedFile);
+				
 			}catch (IOException e) {
 				System.out.println("创建MappedFile失败！");
 			}
 		}
 	}
+}
+public void backup() throws IOException {
+	Map<String, Integer> positionMap=new HashMap<String, Integer>();
+	for(MappedFile mappedFile:mappedFiles) {
+		positionMap.put(mappedFile.name, mappedFile.wrotePosition);
+	}
+	byte[] bs=JSON.toJSONString(positionMap).getBytes();
+	ByteBuffer byteBuffer=ByteBuffer.allocate(bs.length+4);
+	byteBuffer.putInt(bs.length);
+	byteBuffer.put(bs);
+	File file = new File(storePath, ".bak");
+	if (!file.exists()) {
+		file.createNewFile();
+	}
+	RandomAccessFile raFile = new RandomAccessFile(file, "rw");
+	raFile.setLength(bs.length+4);
+	FileChannel fileChannel=raFile.getChannel();
+	MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileChannel.size());
+	buffer.put(byteBuffer.array());
+	fileChannel.close();
+	raFile.close();
 }
 }
