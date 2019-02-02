@@ -5,50 +5,52 @@ import java.net.SocketAddress;
 import io.netty.channel.Channel;
 
 public class RemotingUtil {
-    public static String parseChannelRemoteAddr(final Channel channel) {
-        if (null == channel) {
-            return "";
-        }
-        SocketAddress remote = channel.remoteAddress();
-        final String addr = remote != null ? remote.toString() : "";
+	public static String parseChannelRemoteAddr(final Channel channel) {
+		if (null == channel) {
+			return "";
+		}
+		SocketAddress remote = channel.remoteAddress();
+		final String addr = remote != null ? remote.toString() : "";
 
-        if (addr.length() > 0) {
-            int index = addr.lastIndexOf("/");
-            if (index >= 0) {
-                return addr.substring(index + 1);
-            }
+		if (addr.length() > 0) {
+			int index = addr.lastIndexOf("/");
+			if (index >= 0) {
+				return addr.substring(index + 1);
+			}
 
-            return addr;
-        }
+			return addr;
+		}
 
-        return "";
-    }
-    public static String parseChannelLocalAddr(final Channel channel) {
-        if (null == channel) {
-            return "";
-        }
-        SocketAddress local = channel.localAddress();
-        final String addr = local != null ? local.toString() : "";
+		return "";
+	}
 
-        if (addr.length() > 0) {
-            int index = addr.lastIndexOf("/");
-            if (index >= 0) {
-                return addr.substring(index + 1);
-            }
+	public static String parseChannelLocalAddr(final Channel channel) {
+		if (null == channel) {
+			return "";
+		}
+		SocketAddress local = channel.localAddress();
+		final String addr = local != null ? local.toString() : "";
 
-            return addr;
-        }
+		if (addr.length() > 0) {
+			int index = addr.lastIndexOf("/");
+			if (index >= 0) {
+				return addr.substring(index + 1);
+			}
 
-        return "";
-    }
-    public static String parseSocketAddressAddr(SocketAddress socketAddress) {
-        if (socketAddress != null) {
-            final String addr = socketAddress.toString();
+			return addr;
+		}
 
-            if (addr.length() > 0) {
-                return addr.substring(1);
-            }
-        }
-        return "";
-    }
+		return "";
+	}
+
+	public static String parseSocketAddressAddr(SocketAddress socketAddress) {
+		if (socketAddress != null) {
+			final String addr = socketAddress.toString();
+
+			if (addr.length() > 0) {
+				return addr.substring(1);
+			}
+		}
+		return "";
+	}
 }

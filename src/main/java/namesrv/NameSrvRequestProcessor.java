@@ -15,26 +15,28 @@ import remoting.RemotingCommand;
 import util.RemotingUtil;
 
 public class NameSrvRequestProcessor implements NettyRequestProcessor {
-    public NamesrvController namesrvController;
-    public NameSrvRequestProcessor(NamesrvController namesrvController) {
-    	this.namesrvController=namesrvController;
-    }
+	public NamesrvController namesrvController;
+
+	public NameSrvRequestProcessor(NamesrvController namesrvController) {
+		this.namesrvController = namesrvController;
+	}
+
 	public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) throws Exception {
 		switch (request.getCode()) {
-        case CommandCode.PUT_KV_CONFIG:
-            return this.putKVConfig(ctx, request);
-        case CommandCode.GET_KV_CONFIG:
-            return this.getKVConfig(ctx, request);
-        case CommandCode.DELETE_KV_CONFIG:
-            return this.deleteKVConfig(ctx, request);
-        case CommandCode.REGISTER_BROKER:
-            return this.registerBroker(ctx, request);
-        case CommandCode.UNREGISTER_BROKER:
-            return this.unregisterBroker(ctx, request);
-        case CommandCode.GET_ROUTEINTO_BY_TOPIC:
-            return this.getRouteInfoByTopic(ctx, request);
-        case CommandCode.GET_ROUTEINTO:
-        	return this.getRouteInfo(ctx, request);
+		case CommandCode.PUT_KV_CONFIG:
+			return this.putKVConfig(ctx, request);
+		case CommandCode.GET_KV_CONFIG:
+			return this.getKVConfig(ctx, request);
+		case CommandCode.DELETE_KV_CONFIG:
+			return this.deleteKVConfig(ctx, request);
+		case CommandCode.REGISTER_BROKER:
+			return this.registerBroker(ctx, request);
+		case CommandCode.UNREGISTER_BROKER:
+			return this.unregisterBroker(ctx, request);
+		case CommandCode.GET_ROUTEINTO_BY_TOPIC:
+			return this.getRouteInfoByTopic(ctx, request);
+		case CommandCode.GET_ROUTEINTO:
+			return this.getRouteInfo(ctx, request);
 		default:
 			break;
 		}
@@ -44,97 +46,89 @@ public class NameSrvRequestProcessor implements NettyRequestProcessor {
 	public boolean rejectRequest() {
 		return false;
 	}
-    public RemotingCommand putKVConfig(ChannelHandlerContext ctx,
-           RemotingCommand request) throws Exception {
-           final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
 
-           this.namesrvController.getKvConfigManager().putKVConfig(
-                request.getExtFields().get("namespace"),
-                request.getExtFields().get("key"),
-                request.getExtFields().get("value")
-           );
+	public RemotingCommand putKVConfig(ChannelHandlerContext ctx, RemotingCommand request) throws Exception {
+		final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
 
-            response.setCode(CommandCode.SUCCESS);
-            return response;
-     }
-     public RemotingCommand getKVConfig(ChannelHandlerContext ctx,
-            RemotingCommand request) throws Exception {
-            final RemotingCommand response = new RemotingCommand(CommandCode.QUERY_NOT_FOUND, null);
+		this.namesrvController.getKvConfigManager().putKVConfig(request.getExtFields().get("namespace"),
+				request.getExtFields().get("key"), request.getExtFields().get("value"));
 
-            String value = this.namesrvController.getKvConfigManager().getKVConfig(
-            	request.getExtFields().get("namespace"),
-                request.getExtFields().get("key")
-            );
+		response.setCode(CommandCode.SUCCESS);
+		return response;
+	}
 
-            if (value != null) {
-                response.getExtFields().put("value", value);
-                response.setCode(CommandCode.SUCCESS);
-            }
-            return response;
-     }
-     public RemotingCommand deleteKVConfig(ChannelHandlerContext ctx,
-            RemotingCommand request) throws Exception {
-            final RemotingCommand response = new RemotingCommand(CommandCode.QUERY_NOT_FOUND, null);
+	public RemotingCommand getKVConfig(ChannelHandlerContext ctx, RemotingCommand request) throws Exception {
+		final RemotingCommand response = new RemotingCommand(CommandCode.QUERY_NOT_FOUND, null);
 
-    	    this.namesrvController.getKvConfigManager().deleteKVConfig(
-    	         request.getExtFields().get("namespace"),
-    	         request.getExtFields().get("key")
-    	    );
+		String value = this.namesrvController.getKvConfigManager().getKVConfig(request.getExtFields().get("namespace"),
+				request.getExtFields().get("key"));
 
-    	    response.setCode(CommandCode.SUCCESS);
-    	    return response;
-     }
-     public RemotingCommand registerBroker(ChannelHandlerContext ctx,
-             RemotingCommand request) throws Exception {
-             final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
-             HashMap<String, QueueData> topicQueueConfig=JSON.parseObject(new String(request.getBody()), new TypeReference<HashMap<String,QueueData>>() {});
+		if (value != null) {
+			response.getExtFields().put("value", value);
+			response.setCode(CommandCode.SUCCESS);
+		}
+		return response;
+	}
 
-    	       this.namesrvController.getRouteInfoManager().registerBroker(
-    	      	    request.getExtFields().get("clusterName"),
-    	    	    RemotingUtil.parseChannelRemoteAddr(ctx.channel()).split(":")[0]+":"+request.getExtFields().get("brokerPort"),
-    	    	    request.getExtFields().get("brokerName"),
-    	    	    Long.parseLong(request.getExtFields().get("brokerId")),
-    	    	    request.getExtFields().get("haServerAddr"),
-    	            topicQueueConfig,
-    	            ctx.channel()
-    	        );
+	public RemotingCommand deleteKVConfig(ChannelHandlerContext ctx, RemotingCommand request) throws Exception {
+		final RemotingCommand response = new RemotingCommand(CommandCode.QUERY_NOT_FOUND, null);
 
-    	        response.setCode(CommandCode.SUCCESS);
-    	        return response;
-    	    }
-     public RemotingCommand unregisterBroker(ChannelHandlerContext ctx,
-            RemotingCommand request) throws Exception {
-            final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
+		this.namesrvController.getKvConfigManager().deleteKVConfig(request.getExtFields().get("namespace"),
+				request.getExtFields().get("key"));
 
-    	    this.namesrvController.getRouteInfoManager().unregisterBroker(
-    	         request.getExtFields().get("clusterName"),
-    	         RemotingUtil.parseChannelRemoteAddr(ctx.channel()).split(":")[0]+":"+request.getExtFields().get("brokerPort"),
-    	         request.getExtFields().get("brokerName"),
-    	         Long.parseLong(request.getExtFields().get("brokerId")));
+		response.setCode(CommandCode.SUCCESS);
+		return response;
+	}
 
-    	    response.setCode(CommandCode.SUCCESS);
-    	    return response;
-     }
-     public RemotingCommand getRouteInfoByTopic(ChannelHandlerContext ctx,
-             RemotingCommand request) throws Exception {
-             final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
+	public RemotingCommand registerBroker(ChannelHandlerContext ctx, RemotingCommand request) throws Exception {
+		final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
+		HashMap<String, QueueData> topicQueueConfig = JSON.parseObject(new String(request.getBody()),
+				new TypeReference<HashMap<String, QueueData>>() {
+				});
 
-    	     TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager().pickupTopicRouteData(request.getExtFields().get("topic"));
+		this.namesrvController.getRouteInfoManager().registerBroker(request.getExtFields().get("clusterName"),
+				RemotingUtil.parseChannelRemoteAddr(ctx.channel()).split(":")[0] + ":"
+						+ request.getExtFields().get("brokerPort"),
+				request.getExtFields().get("brokerName"), Long.parseLong(request.getExtFields().get("brokerId")),
+				request.getExtFields().get("haServerAddr"), topicQueueConfig, ctx.channel());
 
-    	     byte[] content = JSON.toJSONString(topicRouteData).getBytes();
-    	     response.setBody(content);
-    	     response.setCode(CommandCode.SUCCESS);
-    	     return response;
-     }
-     public RemotingCommand getRouteInfo(ChannelHandlerContext ctx,
-             RemotingCommand request) throws Exception {
-             final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
+		response.setCode(CommandCode.SUCCESS);
+		return response;
+	}
 
-    	     Map<String, TopicRouteData> topicRouteDataMap = this.namesrvController.getRouteInfoManager().pickupAllTopicRouteData();
+	public RemotingCommand unregisterBroker(ChannelHandlerContext ctx, RemotingCommand request) throws Exception {
+		final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
 
-    	     byte[] content = JSON.toJSONString(topicRouteDataMap).getBytes();
-    	     response.setBody(content);
-    	     response.setCode(CommandCode.SUCCESS);
-    	     return response;
-     }
+		this.namesrvController.getRouteInfoManager().unregisterBroker(request.getExtFields().get("clusterName"),
+				RemotingUtil.parseChannelRemoteAddr(ctx.channel()).split(":")[0] + ":"
+						+ request.getExtFields().get("brokerPort"),
+				request.getExtFields().get("brokerName"), Long.parseLong(request.getExtFields().get("brokerId")));
+
+		response.setCode(CommandCode.SUCCESS);
+		return response;
+	}
+
+	public RemotingCommand getRouteInfoByTopic(ChannelHandlerContext ctx, RemotingCommand request) throws Exception {
+		final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
+
+		TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager()
+				.pickupTopicRouteData(request.getExtFields().get("topic"));
+
+		byte[] content = JSON.toJSONString(topicRouteData).getBytes();
+		response.setBody(content);
+		response.setCode(CommandCode.SUCCESS);
+		return response;
+	}
+
+	public RemotingCommand getRouteInfo(ChannelHandlerContext ctx, RemotingCommand request) throws Exception {
+		final RemotingCommand response = new RemotingCommand(CommandCode.SYSTEM_ERROR, null);
+
+		Map<String, TopicRouteData> topicRouteDataMap = this.namesrvController.getRouteInfoManager()
+				.pickupAllTopicRouteData();
+
+		byte[] content = JSON.toJSONString(topicRouteDataMap).getBytes();
+		response.setBody(content);
+		response.setCode(CommandCode.SUCCESS);
+		return response;
+	}
 }
