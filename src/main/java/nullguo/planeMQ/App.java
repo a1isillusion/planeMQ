@@ -13,6 +13,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 
@@ -173,9 +181,30 @@ public class App {
         store.createTopic("i", 0, 10);
         store.putMessage(message);
         store.backup();*/
-        MessageStore store=new MessageStore();
-        store.recover();
-        System.out.println(JSON.toJSONString( store.getTotalOffset()));
-        System.out.println(JSON.toJSONString(store.getMessage("", "i", 6, 0, 1)));
+/*		args = new String[] { "-b", "8080", "-s", "G://planeMQ", "-n", "localhost:8037" };*/
+		try {
+			// create Options object
+			Options options = new Options();
+			options.addOption("n", true, "nameserver");
+			options.addOption("b", true, "broker");
+			options.addOption("s", true, "store");
+
+			// create the command line parser
+			CommandLineParser parser = new DefaultParser();
+			CommandLine cmd = parser.parse(options, args);
+
+			// check the options have been set correctly
+			if (cmd.hasOption("b")) {
+				SystemConfig.brokerPort = cmd.getOptionValue("b");
+				SystemConfig.namesrvAddr = cmd.getOptionValue("n");
+				StoreConfig.storePath = cmd.getOptionValue("s");
+				BrokerController brokerController = new BrokerController(Integer.parseInt(SystemConfig.brokerPort));
+			} else if (cmd.hasOption("n")) {
+				int port = Integer.parseInt(cmd.getOptionValue("n"));
+				NamesrvController namesrvController = new NamesrvController(port);
+			}
+		} catch (Exception ex) {
+			System.out.println("Unexpected exception:" + ex.getMessage());
+		}
 	}
 }
