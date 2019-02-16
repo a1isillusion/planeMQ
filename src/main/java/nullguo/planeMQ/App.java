@@ -181,6 +181,7 @@ public class App {
         store.createTopic("i", 0, 10);
         store.putMessage(message);
         store.backup();*/
+/*		args = new String[] {"-n", "8037" };*/
 /*		args = new String[] { "-b", "8080", "-s", "G://planeMQ", "-n", "localhost:8037" };*/
 		try {
 			// create Options object
@@ -188,7 +189,7 @@ public class App {
 			options.addOption("n", true, "nameserver");
 			options.addOption("b", true, "broker");
 			options.addOption("s", true, "store");
-
+            options.addOption("r",false,"recover");
 			// create the command line parser
 			CommandLineParser parser = new DefaultParser();
 			CommandLine cmd = parser.parse(options, args);
@@ -199,6 +200,9 @@ public class App {
 				SystemConfig.namesrvAddr = cmd.getOptionValue("n");
 				StoreConfig.storePath = cmd.getOptionValue("s");
 				BrokerController brokerController = new BrokerController(Integer.parseInt(SystemConfig.brokerPort));
+				if(cmd.hasOption("r")) {
+					brokerController.messageStore.recover();
+				}
 			} else if (cmd.hasOption("n")) {
 				int port = Integer.parseInt(cmd.getOptionValue("n"));
 				NamesrvController namesrvController = new NamesrvController(port);

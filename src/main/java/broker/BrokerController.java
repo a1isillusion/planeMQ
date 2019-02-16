@@ -1,8 +1,10 @@
 package broker;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import config.SystemConfig;
 import remoting.NettyRemotingClient;
@@ -30,6 +32,15 @@ public class BrokerController {
 		this.remotingClient.registerDefaultProcessor(this.requestProcessor, brokerExecutor);
 		this.remotingClient.updateNameServerAddressList(SystemConfig.namesrvAddr);
 		this.remotingClient.registerBroker();
+		this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+			public void run() {
+				try {
+					BrokerController.this.messageStore.backup();
+				} catch (IOException e) {
+					System.out.println("backup error");
+				}
+			}
+		}, 20, 20, TimeUnit.SECONDS);
 	}
 
 	public MessageStore getMessageStore() {
